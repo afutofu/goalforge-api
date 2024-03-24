@@ -22,13 +22,13 @@ def get_year_tasks():
     period = request.args.get('period')
     # Logic to fetch tasks based on the period
     if period == 'day':
-        response = {"data": day_tasks}
+        response = day_tasks
     elif period == 'week':
-        response = {"data": week_tasks}
+        response = week_tasks
     elif period == 'month':
-        response = {"data": month_tasks}
+        response = month_tasks
     elif period == 'year':
-        response = {"data": year_tasks}
+        response = year_tasks
     else:
         response = {"error": "Invalid period specified"}
         return jsonify(response), 400  # Bad Request
