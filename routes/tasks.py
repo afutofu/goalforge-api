@@ -65,6 +65,7 @@ def mockGetTask(period=0):
         return None
 
 
+# Get tasks from the database
 # Example: GET /api/v1/tasks?period=2
 # period could be 0, 1, 2, 3, 4
 # 0 - all, 1 - day, 2 - week, 3 - month, 4 - year
@@ -74,8 +75,6 @@ def get_tasks():
     # Logic to fetch tasks based on the period
     tasks = mockGetTask(period)
 
-    print("DAY TASKS:", mockGetTask(1))
-
     if tasks is None:
         response = {"error": "Invalid period specified"}
         return jsonify(response), 400  # Bad Request
@@ -83,6 +82,7 @@ def get_tasks():
     return jsonify(tasks)
 
 
+# Add tasks to the database
 # Example: POST /api/v1/tasks
 @tasks_blueprint.route("", methods=["POST"])
 def add_task():
@@ -91,11 +91,35 @@ def add_task():
         response = {"error": "Task name is required"}
         return jsonify(response), 400
 
-    # Test fail
-    # response = {"error": "Test fail"}
-    # return jsonify(response), 400
+    # Test fail rollback
+    # return jsonify({"error": "Test fail rollback"}), 500
 
     # Insert new task to the end of the database
     tasks.append(task)
 
     return jsonify(task), 201
+
+
+# Delete tasks from the database
+# Example: DELETE /api/v1/tasks/task_id
+@tasks_blueprint.route("/<string:task_id>", methods=["DELETE"])
+def delete_task(task_id):
+    print("TASK ID:", task_id)
+
+    found_task = None
+
+    for task in tasks:
+        print("CURRENT TASK ID:", task["id"])
+        if task["id"] == task_id:
+            found_task = task
+            break
+
+    if not found_task:
+        return jsonify({"error": "Task not found"}), 404
+
+    # Test fail
+    # return jsonify({"error": "Test fail rollback"}), 500
+
+    tasks.remove(found_task)
+
+    return jsonify({"message": "Task deleted successfully"}), 200
