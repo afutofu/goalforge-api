@@ -100,16 +100,33 @@ def add_task():
     return jsonify(task), 201
 
 
+# Update tasks from the database
+# Example: PUT /api/v1/tasks/task_id
+@tasks_blueprint.route("/<string:task_id>", methods=["PUT"])
+def update_task(task_id):
+    print("TASK ID:", task_id)
+
+    new_task = request.json
+
+    for idx, task in enumerate(tasks):
+        if task["id"] == task_id:
+            tasks[idx] = new_task
+
+            return jsonify(new_task), 200
+
+    return jsonify({"error": "Task not found"}), 404
+
+    # Test fail
+    # return jsonify({"error": "Test fail rollback"}), 500
+
+
 # Delete tasks from the database
 # Example: DELETE /api/v1/tasks/task_id
 @tasks_blueprint.route("/<string:task_id>", methods=["DELETE"])
 def delete_task(task_id):
-    print("TASK ID:", task_id)
-
     found_task = None
 
     for task in tasks:
-        print("CURRENT TASK ID:", task["id"])
         if task["id"] == task_id:
             found_task = task
             break
