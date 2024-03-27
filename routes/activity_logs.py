@@ -122,7 +122,7 @@ def get_tasks():
     return jsonify(logs_today)
 
 
-# Get tasks from the database
+# Add activity log to the database
 # Example: POST /api/v1/activity-logs
 @activity_logs_blueprint.route("", methods=["POST"])
 def add_activity_log():
@@ -137,8 +137,8 @@ def add_activity_log():
     return jsonify(acitivity_log), 201
 
 
-# Update activity log from the database
-# Example: PUT /api/v1/tasks/activity_log_id
+# Update activity log in the database
+# Example: PUT /api/v1/activity_logs/activity_log_id
 @activity_logs_blueprint.route("/<string:activity_log_id>", methods=["PUT"])
 def update_task(activity_log_id):
     print("TASK ID:", activity_log_id)
@@ -155,3 +155,25 @@ def update_task(activity_log_id):
 
     # Test fail
     # return jsonify({"error": "Test fail rollback"}), 500
+
+
+# Delete activity log in the database
+# Example: DELETE /api/v1/activity-logs/activity_log_id
+@activity_logs_blueprint.route("/<string:activity_log_id>", methods=["DELETE"])
+def delete_activity_log(activity_log_id):
+    found_activity_log = None
+
+    for actvity_log in logs:
+        if actvity_log["id"] == activity_log_id:
+            found_activity_log = actvity_log
+            break
+
+    if not found_activity_log:
+        return jsonify({"error": "Activity log not found"}), 404
+
+    # Test fail
+    # return jsonify({"error": "Test fail rollback"}), 500
+
+    logs.remove(found_activity_log)
+
+    return jsonify({"message": "Activity log deleted successfully"}), 200
