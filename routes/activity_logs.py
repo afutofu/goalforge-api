@@ -120,3 +120,18 @@ def get_tasks():
             logs_today.append(log)
 
     return jsonify(logs_today)
+
+
+# Get tasks from the database
+# Example: POST /api/v1/activity-logs
+@activity_logs_blueprint.route("", methods=["POST"])
+def add_activity_log():
+
+    acitivity_log = request.json
+
+    print("ACTIVITY LOG:", acitivity_log)
+
+    #  insert activity log into the first position of the database (as it represents the latest item in logs list)
+    logs.insert(0, acitivity_log)
+
+    return jsonify(acitivity_log), 201
