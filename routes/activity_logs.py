@@ -1,64 +1,122 @@
 from flask import Blueprint, request, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from dateutil import tz
 
 activity_logs_blueprint: Blueprint = Blueprint("activity_logs", __name__)
 
 
 # Mock database
-now = datetime.now()
+utcNow = datetime.now(timezone.utc)
 logs = [
+    {
+        "id": 10,
+        "text": "Work",
+        "createdAt": (utcNow + timedelta(days=-1, hours=-1))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "")
+        + "Z",
+    },
+    {
+        "id": 11,
+        "text": "Work",
+        "createdAt": (utcNow + timedelta(days=-1, hours=-1))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "")
+        + "Z",
+    },
     {
         "id": 1,
         "text": "Work",
-        "createdAt": (now + timedelta(hours=-1)).strftime("%Y-%m-%d %H:%M:%S"),
+        "createdAt": (utcNow + timedelta(hours=-1))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "")
+        + "Z",
     },
     {
         "id": 2,
         "text": "Eat Lunch",
-        "createdAt": (now + timedelta(hours=-2)).strftime("%Y-%m-%d %H:%M:%S"),
+        "createdAt": (utcNow + timedelta(hours=-2))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "")
+        + "Z",
     },
     {
         "id": 3,
         "text": "Finish workout",
-        "createdAt": (now + timedelta(hours=-2)).strftime("%Y-%m-%d %H:%M:%S"),
+        "createdAt": (utcNow + timedelta(hours=-2))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "")
+        + "Z",
     },
     {
         "id": 4,
         "text": "Workout",
-        "createdAt": (now + timedelta(hours=-3)).strftime("%Y-%m-%d %H:%M:%S"),
+        "createdAt": (utcNow + timedelta(hours=-3))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "")
+        + "Z",
     },
     {
         "id": 5,
         "text": "Prepare to workout",
-        "createdAt": (now + timedelta(hours=-4)).strftime("%Y-%m-%d %H:%M:%S"),
+        "createdAt": (utcNow + timedelta(hours=-4))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "")
+        + "Z",
     },
     {
         "id": 6,
         "text": "Eat Breakfast",
-        "createdAt": (now + timedelta(hours=-4)).strftime("%Y-%m-%d %H:%M:%S"),
+        "createdAt": (utcNow + timedelta(hours=-4))
+        .isoformat(timespec="seconds")
+        .replace("+00:00", "")
+        + "Z",
     },
 ]
 
 
 # Get tasks from the database
-# Example: GET /api/v1/tasks?period=2
-# period could be 0, 1, 2, 3, 4
-# 0 - all, 1 - day, 2 - week, 3 - month, 4 - year
+# Example: GET /api/v1/activity-logs?date=2024-03-27T01:53:36Z
+# "date" query parameter is in UTC
 @activity_logs_blueprint.route("", methods=["GET"])
 def get_tasks():
     # If date is not provided, use the current date
-    date = request.args.get("date")
+    date = request.args.get("date").replace(" ", " ")
     if date is None:
-        date = datetime.now().strftime("%Y-%m-%d")
-
-    print("DATE:", date)
-    date_format = "%Y-%m-%d"
-    date_obj = datetime.strptime(date, date_format)
-
-    print(logs)
-
-    return jsonify(logs)
-
-    if logs is None:
-        response = {"error": "Invalid period specified"}
+        response = {"error": "Invalid date specified"}
         return jsonify(response), 400  # Bad Request
+
+    print("DATE UTC:", date)
+    date_format = "%Y-%m-%dT%H:%M:%SZ"
+
+    # Parse the string into a datetime object
+    dt_naive = datetime.strptime(date, date_format)
+
+    from_zone = tz.gettz("UTC")
+    to_zone = tz.tzlocal()
+
+    # Tell the datetime object that it's in UTC time zone since
+    # datetime objects are 'naive' by default
+    dt_aware = dt_naive.replace(tzinfo=from_zone)
+
+    # Convert the datetime object to the local time zone
+    local = dt_aware.astimezone(to_zone)
+
+    print("DATE DT_AWARE:", dt_aware)
+    print("DATE LOCAL:", local)
+
+    logs_today = []
+
+    for log in logs:
+        log_date = datetime.strptime(log["createdAt"], date_format)
+        log_date = log_date.replace(tzinfo=from_zone)
+        log_date = log_date.astimezone(to_zone)
+
+        if (
+            log_date.year == local.year
+            and log_date.month == local.month
+            and log_date.day == local.day
+        ):
+            logs_today.append(log)
+
+    return jsonify(logs_today)
