@@ -135,3 +135,23 @@ def add_activity_log():
     logs.insert(0, acitivity_log)
 
     return jsonify(acitivity_log), 201
+
+
+# Update activity log from the database
+# Example: PUT /api/v1/tasks/activity_log_id
+@activity_logs_blueprint.route("/<string:activity_log_id>", methods=["PUT"])
+def update_task(activity_log_id):
+    print("TASK ID:", activity_log_id)
+
+    edited_activity_log = request.json
+
+    for idx, activity_log in enumerate(logs):
+        if activity_log["id"] == activity_log_id:
+            logs[idx] = edited_activity_log
+
+            return jsonify(edited_activity_log), 200
+
+    return jsonify({"error": "Task not found"}), 404
+
+    # Test fail
+    # return jsonify({"error": "Test fail rollback"}), 500
