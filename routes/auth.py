@@ -12,6 +12,12 @@ def generate_jwt():
     email = user_data.get("email")
     name = user_data.get("name")
 
+    # Check if user exists in the databse
+
+    # If user does not exist, register the user in the database
+
+    # In either case, generate a JWT for the user containing the unique user ID
+
     # Generate a JWT
     encoded_jwt = jwt.encode(
         {
