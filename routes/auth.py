@@ -10,8 +10,8 @@ load_dotenv()
 auth_blueprint: Blueprint = Blueprint("auth", __name__)
 
 
-@auth_blueprint.route("/generate-jwt", methods=["POST"])
-def generate_jwt():
+@auth_blueprint.route("/oauth-signin", methods=["POST"])
+def oauth_signin():
     # Assuming you are sending JSON data
     sign_in_data = request.json
     sign_in_type = sign_in_data.get("sign_in_type")
