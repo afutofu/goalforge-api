@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from middleware.token_required import token_required
+from database import dynamodb
+from boto3.dynamodb.conditions import Key
 
 tasks_blueprint: Blueprint = Blueprint("tasks", __name__)
 
@@ -75,13 +77,25 @@ def mockGetTask(period=0):
 def get_tasks(current_user):
     period = int(request.args.get("period"))
     # Logic to fetch tasks based on the period
-    tasks = mockGetTask(period)
+    # tasks = mockGetTask(period)
+
+    tasks_table = dynamodb.Table("GoalForge-Tasks")
+
+    print("Current User:", current_user)
+
+    tasks = []
+    if period == 0:
+        tasks_query = tasks_table.query(
+            KeyConditionExpression=Key("UserID").eq(current_user["UserID"])
+        )
+
+        tasks = tasks_query["Items"]
 
     if tasks is None:
         response = {"error": "Invalid period specified"}
         return jsonify(response), 400  # Bad Request
 
-    return jsonify(tasks)
+    return jsonify(tasks), 200
 
 
 # Add tasks to the database
