@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from middleware.token_required import token_required
 
 tasks_blueprint: Blueprint = Blueprint("tasks", __name__)
 
@@ -70,7 +71,8 @@ def mockGetTask(period=0):
 # period could be 0, 1, 2, 3, 4
 # 0 - all, 1 - day, 2 - week, 3 - month, 4 - year
 @tasks_blueprint.route("", methods=["GET"])
-def get_tasks():
+@token_required
+def get_tasks(current_user):
     period = int(request.args.get("period"))
     # Logic to fetch tasks based on the period
     tasks = mockGetTask(period)
@@ -85,7 +87,8 @@ def get_tasks():
 # Add tasks to the database
 # Example: POST /api/v1/tasks
 @tasks_blueprint.route("", methods=["POST"])
-def add_task():
+@token_required
+def add_task(current_user):
     task = request.json
     if "name" not in task:
         response = {"error": "Task name is required"}
@@ -103,7 +106,8 @@ def add_task():
 # Update tasks from the database
 # Example: PUT /api/v1/tasks/task_id
 @tasks_blueprint.route("/<string:task_id>", methods=["PUT"])
-def update_task(task_id):
+@token_required
+def update_task(current_user, task_id):
     print("TASK ID:", task_id)
 
     new_task = request.json
@@ -123,7 +127,8 @@ def update_task(task_id):
 # Delete tasks from the database
 # Example: DELETE /api/v1/tasks/task_id
 @tasks_blueprint.route("/<string:task_id>", methods=["DELETE"])
-def delete_task(task_id):
+@token_required
+def delete_task(current_user, task_id):
     found_task = None
 
     for task in tasks:

@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta, timezone
 from dateutil import tz
+from middleware.token_required import token_required
 
 activity_logs_blueprint: Blueprint = Blueprint("activity_logs", __name__)
-
 
 # Mock database
 utcNow = datetime.now(timezone.utc)
@@ -79,7 +79,8 @@ logs = [
 # Example: GET /api/v1/activity-logs?date=2024-03-27T01:53:36Z
 # "date" query parameter is in UTC
 @activity_logs_blueprint.route("", methods=["GET"])
-def get_tasks():
+@token_required
+def get_tasks(current_user):
     # If date is not provided, use the current date
     date = request.args.get("date").replace(" ", " ")
     if date is None:
@@ -125,7 +126,8 @@ def get_tasks():
 # Add activity log to the database
 # Example: POST /api/v1/activity-logs
 @activity_logs_blueprint.route("", methods=["POST"])
-def add_activity_log():
+@token_required
+def add_activity_log(current_user):
 
     acitivity_log = request.json
 
@@ -140,7 +142,8 @@ def add_activity_log():
 # Update activity log in the database
 # Example: PUT /api/v1/activity_logs/activity_log_id
 @activity_logs_blueprint.route("/<string:activity_log_id>", methods=["PUT"])
-def update_task(activity_log_id):
+@token_required
+def update_task(current_user, activity_log_id):
     print("TASK ID:", activity_log_id)
 
     edited_activity_log = request.json
@@ -160,7 +163,8 @@ def update_task(activity_log_id):
 # Delete activity log in the database
 # Example: DELETE /api/v1/activity-logs/activity_log_id
 @activity_logs_blueprint.route("/<string:activity_log_id>", methods=["DELETE"])
-def delete_activity_log(activity_log_id):
+@token_required
+def delete_activity_log(current_user, activity_log_id):
     found_activity_log = None
 
     for actvity_log in logs:
