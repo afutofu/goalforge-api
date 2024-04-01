@@ -47,7 +47,7 @@ def oauth_signin():
             }
         )
 
-    # In either case, generate a JWT for the user containing the unique user ID
+    # If user either signs in or registers successfully, generate a JWT for the user containing the unique user ID
 
     # Generate a JWT
     encoded_jwt = jwt.encode(

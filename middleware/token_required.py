@@ -13,20 +13,26 @@ def token_required(f):
     def decorated(*args, **kwargs):
         token = None
 
-        if "x-access-token" in request.headers:
-            token = request.headers["x-access-token"]
+        if request.headers.get("x-auth-token") != None:
+            token = request.headers["x-auth-token"]
 
         if not token:
             return jsonify({"error": "Token is missing"}), 401
 
         try:
-            data = jwt.decode(token, os.getenv["JWT_SECRET_KEY"])
+            print("About to decode token")
+            data = jwt.decode(
+                jwt=token,
+                key=os.getenv("JWT_SECRET_KEY"),
+                algorithms="HS256",
+            )
             user_table = dynamodb.Table("GoalForge-Users")
             current_user = user_table.get_item(Key={"UserID": data["userID"]})
 
             if not "Item" in current_user or not current_user["Item"]:
                 return jsonify({"error": "Invalid token"}), 401
-        except:
+        except Exception as e:
+            print("Error: ", e)
             return jsonify({"error": "Token is invalid"}), 401
 
         return f(current_user, *args, **kwargs)
