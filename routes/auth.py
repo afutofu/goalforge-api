@@ -1,7 +1,7 @@
-from flask import Blueprint, current_app, request, jsonify
+from flask import Blueprint, request, jsonify
 from datetime import datetime, timezone, timedelta
 import jwt
-from database import dynamodb_client
+from database import dynamodb
 from dotenv import load_dotenv
 import os
 
@@ -19,7 +19,7 @@ def oauth_signin():
     name = sign_in_data.get("name")
 
     try:
-        users_table = dynamodb_client.Table("GoalForge-Users")
+        users_table = dynamodb.Table("GoalForge-Users")
     except Exception as e:
         print("Error: ", e)
         return jsonify({"error": "Internal server error"}), 500
