@@ -2,8 +2,12 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta, timezone
 from dateutil import tz
 from middleware.token_required import token_required
+from database import dynamodb
+from boto3.dynamodb.conditions import Key, Attr
 
 activity_logs_blueprint: Blueprint = Blueprint("activity_logs", __name__)
+
+activity_logs_table = dynamodb.Table("GoalForge-ActivityLogs")
 
 # Mock database
 utcNow = datetime.now(timezone.utc)
@@ -80,7 +84,7 @@ logs = [
 # "date" query parameter is in UTC
 @activity_logs_blueprint.route("", methods=["GET"])
 @token_required
-def get_tasks(current_user):
+def get_activity_logs(current_user):
     # If date is not provided, use the current date
     date = request.args.get("date").replace(" ", " ")
     if date is None:
@@ -108,17 +112,26 @@ def get_tasks(current_user):
 
     logs_today = []
 
-    for log in logs:
-        log_date = datetime.strptime(log["createdAt"], date_format)
-        log_date = log_date.replace(tzinfo=from_zone)
-        log_date = log_date.astimezone(to_zone)
+    # for log in logs:
+    #     log_date = datetime.strptime(log["createdAt"], date_format)
+    #     log_date = log_date.replace(tzinfo=from_zone)
+    #     log_date = log_date.astimezone(to_zone)
 
-        if (
-            log_date.year == local.year
-            and log_date.month == local.month
-            and log_date.day == local.day
-        ):
-            logs_today.append(log)
+    #     if (
+    #         log_date.year == local.year
+    #         and log_date.month == local.month
+    #         and log_date.day == local.day
+    #     ):
+    #         logs_today.append(log)
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    response = activity_logs_table.query(
+        KeyConditionExpression=Key("UserID").eq(current_user["UserID"]),
+        FilterExpression=Attr("CreatedAt").begins_with(today),
+    )
+
+    logs_today = response["Items"]
 
     return jsonify(logs_today)
 
@@ -129,14 +142,20 @@ def get_tasks(current_user):
 @token_required
 def add_activity_log(current_user):
 
-    acitivity_log = request.json
+    activity_log = request.json
 
-    print("ACTIVITY LOG:", acitivity_log)
+    print("ACTIVITY LOG:", activity_log)
 
-    #  insert activity log into the first position of the database (as it represents the latest item in logs list)
-    logs.insert(0, acitivity_log)
+    new_activity_log = {
+        "UserID": current_user["UserID"],
+        "ActivityLogID": activity_log["ActivityLogID"],
+        "Text": activity_log["Text"],
+        "CreatedAt": activity_log["CreatedAt"],
+    }
 
-    return jsonify(acitivity_log), 201
+    activity_logs_table.put_item(Item=new_activity_log)
+
+    return jsonify(activity_log), 201
 
 
 # Update activity log in the database

@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from middleware.token_required import token_required
 from database import dynamodb
 from boto3.dynamodb.conditions import Key
-import uuid
 
 tasks_blueprint: Blueprint = Blueprint("tasks", __name__)
 
