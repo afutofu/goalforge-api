@@ -140,7 +140,14 @@ def update_task(current_user, task_id):
 
     #         return jsonify(new_task), 200
 
-    response = tasks_table.update_item(
+    found_task = tasks_table.get_item(
+        Key={"UserID": current_user["UserID"], "TaskID": task_id}
+    )["Item"]
+
+    if not found_task:
+        return jsonify({"error": "Task not found"}), 404
+
+    tasks_table.update_item(
         Key={
             "UserID": current_user["UserID"],
             "TaskID": task_id,
@@ -172,17 +179,21 @@ def update_task(current_user, task_id):
 def delete_task(current_user, task_id):
     found_task = None
 
-    for task in tasks:
-        if task["id"] == task_id:
-            found_task = task
-            break
+    # for task in tasks:
+    #     if task["id"] == task_id:
+    #         found_task = task
+    #         break
+
+    found_task = tasks_table.get_item(
+        Key={"UserID": current_user["UserID"], "TaskID": task_id}
+    )["Item"]
 
     if not found_task:
         return jsonify({"error": "Task not found"}), 404
 
+    tasks_table.delete_item(Key={"UserID": current_user["UserID"], "TaskID": task_id})
+
     # Test fail
     # return jsonify({"error": "Test fail rollback"}), 500
-
-    tasks.remove(found_task)
 
     return jsonify({"message": "Task deleted successfully"}), 200
