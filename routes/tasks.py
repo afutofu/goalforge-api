@@ -134,13 +134,32 @@ def update_task(current_user, task_id):
 
     new_task = request.json
 
-    for idx, task in enumerate(tasks):
-        if task["id"] == task_id:
-            tasks[idx] = new_task
+    # for idx, task in enumerate(tasks):
+    #     if task["id"] == task_id:
+    #         tasks[idx] = new_task
 
-            return jsonify(new_task), 200
+    #         return jsonify(new_task), 200
 
-    return jsonify({"error": "Task not found"}), 404
+    response = tasks_table.update_item(
+        Key={
+            "UserID": current_user["UserID"],
+            "TaskID": task_id,
+        },
+        UpdateExpression="SET #name = :val1, #completed = :val2",
+        ExpressionAttributeNames={
+            "#name": "Name",
+            "#completed": "Completed",
+        },
+        ExpressionAttributeValues={
+            ":val1": new_task["Name"],
+            ":val2": new_task["Completed"],
+        },
+        ReturnValues="UPDATED_NEW",
+    )
+
+    return jsonify(new_task), 200
+
+    # return jsonify({"error": "Task not found"}), 404
 
     # Test fail
     # return jsonify({"error": "Test fail rollback"}), 500
