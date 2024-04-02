@@ -2,9 +2,11 @@ from flask import Blueprint, request, jsonify
 from middleware.token_required import token_required
 from database import dynamodb
 from boto3.dynamodb.conditions import Key
+import uuid
 
 tasks_blueprint: Blueprint = Blueprint("tasks", __name__)
 
+tasks_table = dynamodb.Table("GoalForge-Tasks")
 
 # Mock database
 tasks = [
@@ -78,11 +80,6 @@ def get_tasks(current_user):
     period = int(request.args.get("period"))
     # Logic to fetch tasks based on the period
     # tasks = mockGetTask(period)
-
-    tasks_table = dynamodb.Table("GoalForge-Tasks")
-
-    print("Current User:", current_user)
-
     tasks = []
     if period == 0:
         tasks_query = tasks_table.query(
@@ -104,7 +101,7 @@ def get_tasks(current_user):
 @token_required
 def add_task(current_user):
     task = request.json
-    if "name" not in task:
+    if "Name" not in task:
         response = {"error": "Task name is required"}
         return jsonify(response), 400
 
@@ -112,9 +109,20 @@ def add_task(current_user):
     # return jsonify({"error": "Test fail rollback"}), 500
 
     # Insert new task to the end of the database
-    tasks.append(task)
+    # tasks.append(task)
 
-    return jsonify(task), 201
+    new_task = {
+        "UserID": current_user["UserID"],
+        "TaskID": task["TaskID"],
+        "Name": task["Name"],
+        "Completed": task["Completed"],
+        "Period": task["Period"],
+        "CreatedAt": task["CreatedAt"],
+    }
+
+    tasks_table.put_item(Item=new_task)
+
+    return jsonify(new_task), 201
 
 
 # Update tasks from the database
