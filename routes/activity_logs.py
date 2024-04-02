@@ -167,13 +167,28 @@ def update_task(current_user, activity_log_id):
 
     edited_activity_log = request.json
 
-    for idx, activity_log in enumerate(logs):
-        if activity_log["id"] == activity_log_id:
-            logs[idx] = edited_activity_log
+    found_activity_log = activity_logs_table.get_item(
+        Key={"UserID": current_user["UserID"], "ActivityLogID": activity_log_id}
+    )["Item"]
 
-            return jsonify(edited_activity_log), 200
+    if not found_activity_log:
+        return jsonify({"error": "Activity log not found"}), 404
 
-    return jsonify({"error": "Task not found"}), 404
+    activity_logs_table.update_item(
+        Key={
+            "UserID": current_user["UserID"],
+            "ActivityLogID": activity_log_id,
+        },
+        UpdateExpression="SET #text = :val1",
+        ExpressionAttributeNames={
+            "#text": "Text",
+        },
+        ExpressionAttributeValues={
+            ":val1": edited_activity_log["Text"],
+        },
+    )
+
+    return jsonify(edited_activity_log), 200
 
     # Test fail
     # return jsonify({"error": "Test fail rollback"}), 500
@@ -186,10 +201,9 @@ def update_task(current_user, activity_log_id):
 def delete_activity_log(current_user, activity_log_id):
     found_activity_log = None
 
-    for actvity_log in logs:
-        if actvity_log["id"] == activity_log_id:
-            found_activity_log = actvity_log
-            break
+    found_activity_log = activity_logs_table.get_item(
+        Key={"UserID": current_user["UserID"], "ActivityLogID": activity_log_id}
+    )["Item"]
 
     if not found_activity_log:
         return jsonify({"error": "Activity log not found"}), 404
@@ -197,6 +211,8 @@ def delete_activity_log(current_user, activity_log_id):
     # Test fail
     # return jsonify({"error": "Test fail rollback"}), 500
 
-    logs.remove(found_activity_log)
+    activity_logs_table.delete_item(
+        Key={"UserID": current_user["UserID"], "ActivityLogID": activity_log_id}
+    )
 
     return jsonify({"message": "Activity log deleted successfully"}), 200
