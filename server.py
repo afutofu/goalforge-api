@@ -13,4 +13,5 @@ app.register_blueprint(activity_logs_blueprint, url_prefix="/api/v1/activity-log
 app.register_blueprint(auth_blueprint, url_prefix="/api/v1/auth")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8080)
+    app.run()
+    # app.run(debug=True, port=8080)
