@@ -9,6 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+EXPOSE 80
 EXPOSE 443
+EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:443", "server:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "server:app"]
