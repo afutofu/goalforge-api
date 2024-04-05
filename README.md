@@ -1,6 +1,13 @@
 # GoalForge API
 
-Open source repository to develop the API for the productivity app GoalForge.
+Open source repository to develop the REST API for [GoalForge](https://github.com/afutofu/goalforge).
+
+## Current features
+
+- CRUD functionality for tasks
+- CRUD functionality for activity logs
+- Protected routes using JWT
+- OAuth sign in / sign up with Google
 
 ## Getting Started
 
@@ -11,7 +18,7 @@ These instructions will get you a copy of the project up and running on your loc
 1 **Clone the repository**
 
 ```bash
-git clone https://yourproject.git
+git clonehttps://github.com/afutofu/goalforge-api.git
 ```
 
 2 **Navigate to the project directory**
@@ -26,17 +33,7 @@ cd goalforge-api
 python -m venv venv
 ```
 
-4 **Navigate to the project directory**
-
-```bash
-cd goalforge-api
-```
-
-5 **Activate the virtual environment**
-
-```bash
-python -m venv venv
-```
+4 **Activate the virtual environment**
 
 - **On Windows**
 
@@ -50,7 +47,7 @@ python -m venv venv
 source venv/bin/activate
 ```
 
-6 **Install the required packages using requirements.txt**
+5 **Install the required packages using requirements.txt**
 
 ```bash
 pip install -r requirements.txt
