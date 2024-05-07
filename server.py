@@ -4,8 +4,12 @@ from routes.tasks import tasks_blueprint
 from routes.activity_logs import activity_logs_blueprint
 from routes.auth import auth_blueprint
 import os
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+
+load_dotenv()
+app.secret_key = os.getenv("SESSION_SECRET_KEY")
 
 CORS(app)
 
