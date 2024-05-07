@@ -19,6 +19,7 @@ CLIENT_SECRETS_FILE = os.path.join(
 SCOPES = [
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/userinfo.email",
+    "openid",
 ]
 
 load_dotenv()
@@ -67,23 +68,15 @@ def login_google():
 
 @auth_blueprint.route("/callback/google")
 def oauth_google_callback():
-    # Specify the state when creating the flow in the callback so that it can be
-    # verified in the authorization server response.
-    state = session["state"]
 
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE, scopes=SCOPES, state=state
-    )
+    flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES)
+    flow.redirect_uri = url_for("auth.oauth_google_callback", _external=True)
 
     # Use the authorization server's response to fetch the OAuth 2.0 tokens.
     authorization_response = request.url
     flow.fetch_token(authorization_response=authorization_response)
 
-    # Store credentials in the session.
-    # ACTION ITEM: In a production app, you likely want to save these
-    #              credentials in a persistent database instead.
     credentials = flow.credentials
-    # session["credentials"] = credentials_to_dict(credentials)
 
     request_session = requests.session()
     token_request = google.auth.transport.requests.Request(session=request_session)
@@ -121,7 +114,7 @@ def oauth_google_callback():
             }
         )
 
-    jwt_token = generate_jwt(email, name)
+    jwt_token = generate_user_info_jwt(email, name, picture)
 
     return redirect(f"{FRONTEND_URL}?jwt={jwt_token}")
 
@@ -139,8 +132,6 @@ def oauth_signin():
     except Exception as e:
         print("Error: ", e)
         return jsonify({"error": "Internal server error"}), 500
-
-    print("test generate_jwt")
 
     # Check if data is valid
     if not sign_in_type or not email or not name:
@@ -181,11 +172,12 @@ def oauth_signin():
 
 
 # Generate a JWT
-def generate_jwt(user_id, name):
+def generate_user_info_jwt(user_id, name, picture):
     encoded_jwt = jwt.encode(
         {
             "userID": user_id,
             "name": name,
+            "picture": picture,
             "exp": datetime.now(tz=timezone.utc)
             + timedelta(hours=24),  # 24-hour expiration
         },
