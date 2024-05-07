@@ -1,14 +1,21 @@
-from flask import Blueprint, request, jsonify, redirect, session, url_for
+from flask import Blueprint, jsonify, redirect, url_for
+from flask.globals import session, request
+from flask.wrappers import Response
 from datetime import datetime, timezone, timedelta
 import jwt
+import requests
 from database import dynamodb
 from dotenv import load_dotenv
-import os
+import os, pathlib
+import json
+import google
 
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 
-CLIENT_SECRETS_FILE = "../client_secret.json"
+CLIENT_SECRETS_FILE = os.path.join(
+    pathlib.Path(__file__).parent.parent, "client-secret.json"
+)
 SCOPES = [
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/userinfo.email",
@@ -17,6 +24,7 @@ SCOPES = [
 load_dotenv()
 BACKEND_URL = os.getenv("BACKEND_URL")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 
 auth_blueprint: Blueprint = Blueprint("auth", __name__)
 
@@ -24,26 +32,37 @@ auth_blueprint: Blueprint = Blueprint("auth", __name__)
 @auth_blueprint.route("/google")
 def login_google():
 
-    flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES)
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE,
+        scopes=SCOPES,
+    )
 
     # The URI created here must exactly match one of the authorized redirect URIs
     # for the OAuth 2.0 client, which you configured in the API Console. If this
     # value doesn't match an authorized URI, you will get a 'redirect_uri_mismatch'
     # error.
-    flow.redirect_uri = url_for("oauth_google_callback", _external=True)
+    flow.redirect_uri = url_for("auth.oauth_google_callback", _external=True)
+    # flow.redirect_uri = BACKEND_URL + "api/v1/auth/callback/google"
+
+    print(flow.redirect_uri)
 
     authorization_url, state = flow.authorization_url(
         # Enable offline access so that you can refresh an access token without
         # re-prompting the user for permission. Recommended for web server apps.
-        access_type="offline",
+        # access_type="offline",
         # Enable incremental authorization. Recommended as a best practice.
-        include_granted_scopes="true",
+        # include_granted_scopes="true",
     )
 
     # Store the state so the callback can verify the auth server response.
     session["state"] = state
 
-    return redirect(authorization_url)
+    resp = Response(
+        response=json.dumps({"auth_url": authorization_url}),
+        status=200,
+        # mimetype="application/json",
+    )
+    return resp
 
 
 @auth_blueprint.route("/callback/google")
@@ -55,7 +74,6 @@ def oauth_google_callback():
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE, scopes=SCOPES, state=state
     )
-    flow.redirect_uri = url_for("oauth_google_callback", _external=True)
 
     # Use the authorization server's response to fetch the OAuth 2.0 tokens.
     authorization_response = request.url
@@ -65,14 +83,47 @@ def oauth_google_callback():
     # ACTION ITEM: In a production app, you likely want to save these
     #              credentials in a persistent database instead.
     credentials = flow.credentials
-    session["credentials"] = credentials_to_dict(credentials)
+    # session["credentials"] = credentials_to_dict(credentials)
 
-    return redirect(f"{FRONTEND_URL}?jwt={"jwt_token"}")
-    """ return Response(
-        response=json.dumps({'JWT':jwt_token}),
-        status=200,
-        mimetype='application/json'
-    ) """
+    request_session = requests.session()
+    token_request = google.auth.transport.requests.Request(session=request_session)
+
+    id_info = id_token.verify_oauth2_token(
+        id_token=credentials._id_token, request=token_request, audience=GOOGLE_CLIENT_ID
+    )
+    session["google_id"] = id_info.get("sub")
+
+    # removing the specific audience, as it is throwing error
+    del id_info["aud"]
+
+    try:
+        users_table = dynamodb.Table("GoalForge-Users")
+    except Exception as e:
+        print("Error: ", e)
+        return jsonify({"error": "Internal server error when accessing DB"}), 500
+
+    # Check if user exists in the databse
+    email = id_info["email"]
+    name = id_info["name"]
+    picture = id_info["picture"]
+
+    user = users_table.get_item(Key={"UserID": email})
+
+    # If user does not exist, register the user in the database
+    if not "Item" in user or not user["Item"]:
+        users_table.put_item(
+            Item={
+                "UserID": email,
+                "Name": name,
+                "Picture": picture,
+                "SignInType": "google",
+                "CreatedAt": str(datetime.now(tz=timezone.utc)),
+            }
+        )
+
+    jwt_token = generate_jwt(email, name)
+
+    return redirect(f"{FRONTEND_URL}?jwt={jwt_token}")
 
 
 @auth_blueprint.route("/oauth-signin", methods=["POST"])
@@ -127,6 +178,22 @@ def oauth_signin():
     )
 
     return jsonify(token=encoded_jwt)
+
+
+# Generate a JWT
+def generate_jwt(user_id, name):
+    encoded_jwt = jwt.encode(
+        {
+            "userID": user_id,
+            "name": name,
+            "exp": datetime.now(tz=timezone.utc)
+            + timedelta(hours=24),  # 24-hour expiration
+        },
+        os.getenv("JWT_SECRET_KEY"),
+        algorithm="HS256",
+    )
+
+    return encoded_jwt
 
 
 def credentials_to_dict(credentials):
