@@ -121,6 +121,17 @@ def oauth_google_callback():
     return redirect(f"{FRONTEND_URL}?jwt={jwt_token}")
 
 
+@auth_blueprint.route("/logout", methods=["POST"])
+def logout():
+    # clear the local storage from frontend and session backend
+    session.clear()
+    return Response(
+        response=json.dumps({"message": "Logged out"}),
+        status=200,
+        mimetype="application/json",
+    )
+
+
 # Will be deprecated
 @auth_blueprint.route("/oauth-signin", methods=["POST"])
 def oauth_signin():
