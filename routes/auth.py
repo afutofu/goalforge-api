@@ -30,6 +30,7 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 auth_blueprint: Blueprint = Blueprint("auth", __name__)
 
 
+# Login with Google OAuth
 @auth_blueprint.route("/google")
 def login_google():
 
@@ -50,9 +51,9 @@ def login_google():
     authorization_url, state = flow.authorization_url(
         # Enable offline access so that you can refresh an access token without
         # re-prompting the user for permission. Recommended for web server apps.
-        # access_type="offline",
+        access_type="offline",
         # Enable incremental authorization. Recommended as a best practice.
-        # include_granted_scopes="true",
+        include_granted_scopes="true",
     )
 
     # Store the state so the callback can verify the auth server response.
@@ -66,6 +67,7 @@ def login_google():
     return resp
 
 
+# Google OAuth callback route
 @auth_blueprint.route("/callback/google")
 def oauth_google_callback():
 
@@ -119,6 +121,7 @@ def oauth_google_callback():
     return redirect(f"{FRONTEND_URL}?jwt={jwt_token}")
 
 
+# Will be deprecated
 @auth_blueprint.route("/oauth-signin", methods=["POST"])
 def oauth_signin():
     # Assuming you are sending JSON data
@@ -186,14 +189,3 @@ def generate_user_info_jwt(user_id, name, picture):
     )
 
     return encoded_jwt
-
-
-def credentials_to_dict(credentials):
-    return {
-        "token": credentials.token,
-        "refresh_token": credentials.refresh_token,
-        "token_uri": credentials.token_uri,
-        "client_id": credentials.client_id,
-        "client_secret": credentials.client_secret,
-        "scopes": credentials.scopes,
-    }
