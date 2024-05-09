@@ -13,6 +13,8 @@ import google
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 
+from middleware.token_required import token_required
+
 CLIENT_SECRETS_FILE = os.path.join(
     pathlib.Path(__file__).parent.parent, "client-secret.json"
 )
@@ -97,11 +99,11 @@ def oauth_google_callback():
         print("Error: ", e)
         return jsonify({"error": "Internal server error when accessing DB"}), 500
 
-    # Check if user exists in the databse
     email = id_info["email"]
     name = id_info["name"]
-    picture = id_info["picture"]
+    image = id_info["picture"]
 
+    # Check if user exists in the databse
     user = users_table.get_item(Key={"UserID": email})
 
     # If user does not exist, register the user in the database
@@ -110,19 +112,36 @@ def oauth_google_callback():
             Item={
                 "UserID": email,
                 "Name": name,
-                "Picture": picture,
+                "Picture": image,
                 "SignInType": "google",
                 "CreatedAt": str(datetime.now(tz=timezone.utc)),
             }
         )
 
-    jwt_token = generate_user_info_jwt(email, name, picture)
+    jwt_token = generate_user_info_jwt(email, name, image)
 
     return redirect(f"{FRONTEND_URL}?jwt={jwt_token}")
 
 
+@auth_blueprint.route("/fetch-user")
+@token_required
+def fetch_user(current_user):
+    return Response(
+        response=json.dumps(
+            {
+                "Name": current_user["name"],
+                "Email": current_user["userID"],
+                "Image": current_user["image"],
+            }
+        ),
+        status=200,
+        mimetype="application/json",
+    )
+
+
 @auth_blueprint.route("/logout", methods=["POST"])
-def logout():
+@token_required
+def logout(current_user):
     # clear the local storage from frontend and session backend
     session.clear()
     return Response(
@@ -186,12 +205,12 @@ def oauth_signin():
 
 
 # Generate a JWT
-def generate_user_info_jwt(user_id, name, picture):
+def generate_user_info_jwt(user_id, name, image):
     encoded_jwt = jwt.encode(
         {
             "userID": user_id,
             "name": name,
-            "picture": picture,
+            "image": image,
             "exp": datetime.now(tz=timezone.utc)
             + timedelta(hours=24),  # 24-hour expiration
         },
