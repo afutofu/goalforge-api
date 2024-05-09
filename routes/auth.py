@@ -15,9 +15,7 @@ from google_auth_oauthlib.flow import Flow
 
 from middleware.token_required import token_required
 
-CLIENT_SECRETS_FILE = os.path.join(
-    pathlib.Path(__file__).parent.parent, "client-secret.json"
-)
+
 SCOPES = [
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/userinfo.email",
@@ -28,6 +26,9 @@ load_dotenv()
 BACKEND_URL = os.getenv("BACKEND_URL")
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+CLIENT_SECRETS_FILE_PATH = os.getenv("GOOGLE_CLIENT_SECRET_PATH") or os.path.join(
+    pathlib.Path(__file__).parent.parent, "client-secret.json"
+)
 
 auth_blueprint: Blueprint = Blueprint("auth", __name__)
 
@@ -37,7 +38,7 @@ auth_blueprint: Blueprint = Blueprint("auth", __name__)
 def login_google():
 
     flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
+        CLIENT_SECRETS_FILE_PATH,
         scopes=SCOPES,
     )
 
@@ -73,7 +74,7 @@ def login_google():
 @auth_blueprint.route("/callback/google")
 def oauth_google_callback():
 
-    flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE, scopes=SCOPES)
+    flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE_PATH, scopes=SCOPES)
     flow.redirect_uri = url_for("auth.oauth_google_callback", _external=True)
 
     # Use the authorization server's response to fetch the OAuth 2.0 tokens.
