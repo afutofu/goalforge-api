@@ -26,13 +26,15 @@ def token_required(f):
                 key=os.getenv("JWT_SECRET_KEY"),
                 algorithms="HS256",
             )
-            user_table = dynamodb.Table("GoalForge-Users")
-            current_user_query = user_table.get_item(Key={"UserID": data["userID"]})
+            current_user = data
+            # print(data)
+            # user_table = dynamodb.Table("GoalForge-Users")
+            # current_user_query = user_table.get_item(Key={"UserID": data["userID"]})
 
-            if not "Item" in current_user_query or not current_user_query["Item"]:
-                return jsonify({"error": "Invalid token"}), 401
-            else:
-                current_user = current_user_query["Item"]
+            # if not "Item" in current_user_query or not current_user_query["Item"]:
+            #     return jsonify({"error": "Invalid token"}), 401
+            # else:
+            #     current_user = current_user_query["Item"]
 
         except Exception as e:
             print("Error: ", e)
