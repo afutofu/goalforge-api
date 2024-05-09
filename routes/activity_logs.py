@@ -127,7 +127,7 @@ def get_activity_logs(current_user):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     response = activity_logs_table.query(
-        KeyConditionExpression=Key("UserID").eq(current_user["UserID"]),
+        KeyConditionExpression=Key("UserID").eq(current_user["userID"]),
         FilterExpression=Attr("CreatedAt").begins_with(today),
     )
 
@@ -147,7 +147,7 @@ def add_activity_log(current_user):
     print("ACTIVITY LOG:", activity_log)
 
     new_activity_log = {
-        "UserID": current_user["UserID"],
+        "UserID": current_user["userID"],
         "ActivityLogID": activity_log["ActivityLogID"],
         "Text": activity_log["Text"],
         "CreatedAt": activity_log["CreatedAt"],
@@ -168,7 +168,7 @@ def update_task(current_user, activity_log_id):
     edited_activity_log = request.json
 
     found_activity_log = activity_logs_table.get_item(
-        Key={"UserID": current_user["UserID"], "ActivityLogID": activity_log_id}
+        Key={"UserID": current_user["userID"], "ActivityLogID": activity_log_id}
     )["Item"]
 
     if not found_activity_log:
@@ -176,7 +176,7 @@ def update_task(current_user, activity_log_id):
 
     activity_logs_table.update_item(
         Key={
-            "UserID": current_user["UserID"],
+            "UserID": current_user["userID"],
             "ActivityLogID": activity_log_id,
         },
         UpdateExpression="SET #text = :val1",
@@ -202,7 +202,7 @@ def delete_activity_log(current_user, activity_log_id):
     found_activity_log = None
 
     found_activity_log = activity_logs_table.get_item(
-        Key={"UserID": current_user["UserID"], "ActivityLogID": activity_log_id}
+        Key={"UserID": current_user["userID"], "ActivityLogID": activity_log_id}
     )["Item"]
 
     if not found_activity_log:
@@ -212,7 +212,7 @@ def delete_activity_log(current_user, activity_log_id):
     # return jsonify({"error": "Test fail rollback"}), 500
 
     activity_logs_table.delete_item(
-        Key={"UserID": current_user["UserID"], "ActivityLogID": activity_log_id}
+        Key={"UserID": current_user["userID"], "ActivityLogID": activity_log_id}
     )
 
     return jsonify({"message": "Activity log deleted successfully"}), 200
