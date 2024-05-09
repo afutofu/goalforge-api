@@ -82,7 +82,7 @@ def get_tasks(current_user):
     tasks = []
     if period == 0:
         tasks_query = tasks_table.query(
-            KeyConditionExpression=Key("UserID").eq(current_user["UserID"])
+            KeyConditionExpression=Key("UserID").eq(current_user["userID"])
         )
 
         tasks = tasks_query["Items"]
@@ -111,7 +111,7 @@ def add_task(current_user):
     # tasks.append(task)
 
     new_task = {
-        "UserID": current_user["UserID"],
+        "UserID": current_user["userID"],
         "TaskID": task["TaskID"],
         "Name": task["Name"],
         "Completed": task["Completed"],
@@ -140,7 +140,7 @@ def update_task(current_user, task_id):
     #         return jsonify(new_task), 200
 
     found_task = tasks_table.get_item(
-        Key={"UserID": current_user["UserID"], "TaskID": task_id}
+        Key={"UserID": current_user["userID"], "TaskID": task_id}
     )["Item"]
 
     if not found_task:
@@ -148,7 +148,7 @@ def update_task(current_user, task_id):
 
     tasks_table.update_item(
         Key={
-            "UserID": current_user["UserID"],
+            "UserID": current_user["userID"],
             "TaskID": task_id,
         },
         UpdateExpression="SET #name = :val1, #completed = :val2",
@@ -184,13 +184,13 @@ def delete_task(current_user, task_id):
     #         break
 
     found_task = tasks_table.get_item(
-        Key={"UserID": current_user["UserID"], "TaskID": task_id}
+        Key={"UserID": current_user["userID"], "TaskID": task_id}
     )["Item"]
 
     if not found_task:
         return jsonify({"error": "Task not found"}), 404
 
-    tasks_table.delete_item(Key={"UserID": current_user["UserID"], "TaskID": task_id})
+    tasks_table.delete_item(Key={"UserID": current_user["userID"], "TaskID": task_id})
 
     # Test fail
     # return jsonify({"error": "Test fail rollback"}), 500
