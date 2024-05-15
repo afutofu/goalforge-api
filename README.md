@@ -55,8 +55,8 @@ pip install -r requirements.txt
 
 ## Built With
 
-- Flask - The web framework used
-- Boto3 - ORM for AWS DynamoDB
+- Flask
+- Boto3
 
 ## Authors
 
