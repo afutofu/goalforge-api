@@ -11,12 +11,14 @@ colorama==0.4.6
 cryptography==42.0.5
 Flask==3.0.2
 Flask-Cors==4.0.0
+Flask-SQLAlchemy==3.1.1
 google-api-core==2.19.0
 google-api-python-client==2.127.0
 google-auth==2.29.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.0
 googleapis-common-protos==1.63.0
+greenlet==3.0.3
 gunicorn==21.2.0
 httplib2==0.22.0
 idna==3.7
@@ -28,6 +30,7 @@ oauthlib==3.2.2
 packaging==24.0
 proto-plus==1.23.0
 protobuf==4.25.3
+psycopg2==2.9.9
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
 pycparser==2.21
@@ -41,6 +44,8 @@ requests-oauthlib==2.0.0
 rsa==4.9
 s3transfer==0.10.1
 six==1.16.0
+SQLAlchemy==2.0.30
+typing_extensions==4.12.0
 tzdata==2024.1
 uritemplate==4.1.1
 urllib3==2.2.1
