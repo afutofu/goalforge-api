@@ -28,6 +28,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
+# Import models to create tables
+from models import Task, User, ActivityLog
+
 if __name__ == "__main__":
     # app.run(debug=True, host="0.0.0.0", ssl_context=ctx)
     # When running locally, disable OAuthlib's HTTPs verification.
