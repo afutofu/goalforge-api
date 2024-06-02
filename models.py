@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from database import db
 
 
@@ -10,8 +10,8 @@ class User(db.Model):
     name = db.Column(db.String(120), nullable=False)
     password = db.Column(db.String(120), nullable=True)
     signup_method = db.Column(db.String(120), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
     def __repr__(self):
         return "<User %r>" % self.email
@@ -25,8 +25,8 @@ class Task(db.Model):
     completed = db.Column(db.Boolean, default=False)
     period = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
     def __repr__(self):
         return "<Task %r>" % self.text
@@ -38,8 +38,8 @@ class ActivityLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(120), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
     def __repr__(self):
         return "<ActivityLog %r>" % self.text

@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
 from middleware.token_required import token_required
-from database import dynamodb
+from database import dynamodb, db
+from models import Task
 from boto3.dynamodb.conditions import Key
+from datetime import datetime, timezone
 
 tasks_blueprint: Blueprint = Blueprint("tasks", __name__)
 
@@ -77,6 +79,101 @@ def mockGetTask(period=0):
 @token_required
 def get_tasks(current_user):
     period = int(request.args.get("period"))
+
+    # If period is not provided, thorw an error
+    if period is not None and period not in [0, 1, 2, 3, 4]:
+        response = {"error": "Invalid period specified. Valid values are 0, 1, 2, 3, 4"}
+        return jsonify(response), 400  # Bad Request
+
+    # Logic to fetch tasks based on the period
+    # tasks = mockGetTask(period)
+    tasks = []
+    if period == 0:
+        tasks = Task.query.filter_by(UserID=current_user["userID"]).all()
+    else:
+        tasks = Task.query.filter_by(UserID=current_user["userID"], period=period).all()
+
+    return jsonify(tasks), 200
+
+
+# Add tasks to the database
+# Example: POST /api/v1/tasks
+@tasks_blueprint.route("", methods=["POST"])
+@token_required
+def add_task_(current_user):
+    task = request.json
+    if "Name" not in task:
+        response = {"error": "Task name is required"}
+        return jsonify(response), 400
+
+    # Create a new task object
+    new_task = Task(
+        id=task["taskID"],
+        text=task["text"],
+        completed=task["completed"],
+        period=task["period"],
+        user_id=current_user["userID"],
+    )
+
+    db.session.add(new_task)
+    db.session.commit()
+
+    return jsonify(new_task), 201
+
+
+# Update tasks from the database
+# Example: PUT /api/v1/tasks/task_id
+@tasks_blueprint.route("/<string:task_id>", methods=["PUT"])
+@token_required
+def update_task(current_user, task_id):
+    print("TASK ID:", task_id)
+
+    new_task = request.json
+
+    found_task = Task.query.filter_by(
+        UserID=current_user["userID"], TaskID=task_id
+    ).first()
+
+    if not found_task:
+        return jsonify({"error": "Task not found"}), 404
+
+    found_task.tame = new_task["text"]
+    found_task.completed = new_task["completed"]
+    found_task.updated_at = datetime.now(timezone.utc)
+
+    db.session.commit()
+
+    return jsonify(found_task), 200
+
+
+# Delete tasks from the database
+# Example: DELETE /api/v1/tasks/task_id
+@tasks_blueprint.route("/<string:task_id>", methods=["DELETE"])
+@token_required
+def delete_task(current_user, task_id):
+
+    found_task = Task.query.filter_by(
+        UserID=current_user["userID"], TaskID=task_id
+    ).first()
+
+    if not found_task:
+        return jsonify({"error": "Task not found"}), 404
+
+    db.session.delete(found_task)
+    db.session.commit()
+
+    return jsonify({"message": "Task deleted successfully"}), 200
+
+
+# DEPRECATED
+# Get tasks from the database
+# Example: GET /api/v1/tasks?period=2
+# period could be 0, 1, 2, 3, 4
+# 0 - all, 1 - day, 2 - week, 3 - month, 4 - year
+@tasks_blueprint.route("", methods=["GET"])
+@token_required
+def get_tasks_DEPRECATED(current_user):
+    period = int(request.args.get("period"))
     # Logic to fetch tasks based on the period
     # tasks = mockGetTask(period)
     tasks = []
@@ -94,11 +191,12 @@ def get_tasks(current_user):
     return jsonify(tasks), 200
 
 
+# DEPRECATED
 # Add tasks to the database
 # Example: POST /api/v1/tasks
 @tasks_blueprint.route("", methods=["POST"])
 @token_required
-def add_task(current_user):
+def add_task_DEPRECATED(current_user):
     task = request.json
     if "Name" not in task:
         response = {"error": "Task name is required"}
@@ -124,11 +222,12 @@ def add_task(current_user):
     return jsonify(new_task), 201
 
 
+# DEPRECATED
 # Update tasks from the database
 # Example: PUT /api/v1/tasks/task_id
 @tasks_blueprint.route("/<string:task_id>", methods=["PUT"])
 @token_required
-def update_task(current_user, task_id):
+def update_task_DEPRECATEED(current_user, task_id):
     print("TASK ID:", task_id)
 
     new_task = request.json
@@ -171,11 +270,12 @@ def update_task(current_user, task_id):
     # return jsonify({"error": "Test fail rollback"}), 500
 
 
+# DEPRECATED
 # Delete tasks from the database
 # Example: DELETE /api/v1/tasks/task_id
 @tasks_blueprint.route("/<string:task_id>", methods=["DELETE"])
 @token_required
-def delete_task(current_user, task_id):
+def delete_task_DEPRECATED(current_user, task_id):
     found_task = None
 
     # for task in tasks:
