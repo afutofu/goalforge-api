@@ -4,7 +4,8 @@ from flask.wrappers import Response
 from datetime import datetime, timezone, timedelta
 import jwt
 import requests
-from database import dynamodb
+from database import dynamodb, db
+from models import User
 from dotenv import load_dotenv
 import os, pathlib
 import json
@@ -34,6 +35,7 @@ auth_blueprint: Blueprint = Blueprint("auth", __name__)
 
 
 # Login with Google OAuth
+# Example: GET /api/v1/auth/google
 @auth_blueprint.route("/google")
 def login_google():
 
@@ -94,6 +96,103 @@ def oauth_google_callback():
     # removing the specific audience, as it is throwing error
     del id_info["aud"]
 
+    email = id_info["email"]
+    name = id_info["name"]
+    image = id_info["picture"]
+
+    # Check if user exists in the databse
+    found_user = User.query.filter_by(email=email).first()
+
+    # If user does not exist, register the user in the database
+    if not found_user:
+        new_user = User(
+            email=email,
+            name=name,
+            signup_method="google",
+        )
+        db.session.add(new_user)
+        db.session.commit()
+
+    # If user either signs in or registers successfully, generate a JWT for the user containing the unique user ID
+    jwt_token = generate_user_info_jwt(email, name, image)
+
+    return redirect(f"{FRONTEND_URL}?jwt={jwt_token}")
+
+
+# Fetch user info
+# Example: GET /api/v1/auth/fetch-user
+@auth_blueprint.route("/fetch-user")
+@token_required
+def fetch_user(current_user):
+    return Response(
+        response=json.dumps(
+            {
+                "Name": current_user["name"],
+                "Email": current_user["userID"],
+                "Image": current_user["image"],
+            }
+        ),
+        status=200,
+        mimetype="application/json",
+    )
+
+
+# Logout
+# Example: POST /api/v1/auth/logout
+@auth_blueprint.route("/logout", methods=["POST"])
+@token_required
+def logout(current_user):
+    # clear session backend
+    session.clear()
+    return Response(
+        response=json.dumps({"message": "Logged out"}),
+        status=200,
+        mimetype="application/json",
+    )
+
+
+# Generate a JWT
+def generate_user_info_jwt(user_id, name, image):
+    encoded_jwt = jwt.encode(
+        {
+            "userID": user_id,
+            "name": name,
+            "image": image,
+            "exp": datetime.now(tz=timezone.utc)
+            + timedelta(hours=24),  # 24-hour expiration
+        },
+        os.getenv("JWT_SECRET_KEY"),
+        algorithm="HS256",
+    )
+
+    return encoded_jwt
+
+
+# DEPRECATED
+# Google OAuth callback route
+@auth_blueprint.route("/callback/google")
+def oauth_google_callback_DEPRECATED():
+
+    flow = Flow.from_client_secrets_file(CLIENT_SECRETS_FILE_PATH, scopes=SCOPES)
+    flow.redirect_uri = url_for("auth.oauth_google_callback", _external=True)
+
+    # Use the authorization server's response to fetch the OAuth 2.0 tokens.
+    authorization_response = request.url
+    flow.fetch_token(authorization_response=authorization_response)
+
+    credentials = flow.credentials
+
+    request_session = requests.session()
+    token_request = google.auth.transport.requests.Request(session=request_session)
+
+    id_info = id_token.verify_oauth2_token(
+        id_token=credentials._id_token, request=token_request, audience=GOOGLE_CLIENT_ID
+    )
+    session["google_id"] = id_info.get("sub")
+
+    # removing the specific audience, as it is throwing error
+    del id_info["aud"]
+
     try:
         users_table = dynamodb.Table("GoalForge-Users")
     except Exception as e:
@@ -124,37 +223,9 @@ def oauth_google_callback():
     return redirect(f"{FRONTEND_URL}?jwt={jwt_token}")
 
 
-@auth_blueprint.route("/fetch-user")
-@token_required
-def fetch_user(current_user):
-    return Response(
-        response=json.dumps(
-            {
-                "Name": current_user["name"],
-                "Email": current_user["userID"],
-                "Image": current_user["image"],
-            }
-        ),
-        status=200,
-        mimetype="application/json",
-    )
-
-
-@auth_blueprint.route("/logout", methods=["POST"])
-@token_required
-def logout(current_user):
-    # clear the local storage from frontend and session backend
-    session.clear()
-    return Response(
-        response=json.dumps({"message": "Logged out"}),
-        status=200,
-        mimetype="application/json",
-    )
-
-
-# Will be deprecated
+# DEPRECATED
 @auth_blueprint.route("/oauth-signin", methods=["POST"])
-def oauth_signin():
+def oauth_signin_DEPRECATED():
     # Assuming you are sending JSON data
     sign_in_data = request.json
     sign_in_type = sign_in_data.get("sign_in_type")
@@ -203,20 +274,3 @@ def oauth_signin():
     )
 
     return jsonify(token=encoded_jwt)
-
-
-# Generate a JWT
-def generate_user_info_jwt(user_id, name, image):
-    encoded_jwt = jwt.encode(
-        {
-            "userID": user_id,
-            "name": name,
-            "image": image,
-            "exp": datetime.now(tz=timezone.utc)
-            + timedelta(hours=24),  # 24-hour expiration
-        },
-        os.getenv("JWT_SECRET_KEY"),
-        algorithm="HS256",
-    )
-
-    return encoded_jwt
