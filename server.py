@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
+from sqlalchemy import text
 from routes.tasks import tasks_blueprint
 from routes.activity_logs import activity_logs_blueprint
 from routes.auth import auth_blueprint
@@ -39,10 +40,15 @@ if __name__ == "__main__":
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
     with app.app_context():
+        try:
+            db.session.execute(text("SELECT 1"))
+            print("\n\n----------- Database connection successful !")
 
-        # Create tables if they do not exist
-        db.create_all()
+            # Create tables if they do not exist
+            db.create_all()
+        except Exception as e:
+            print("\n\n----------- Connection failed ! ERROR : ", e)
 
-        app.run()
-        # app.run(debug=True)
+        # app.run()
+        app.run(debug=True)
         print("Running server.py")
