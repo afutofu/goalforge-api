@@ -113,8 +113,14 @@ def oauth_google_callback():
         db.session.add(new_user)
         db.session.commit()
 
+        found_user = User.query.filter_by(email=email).first()
+
     # If user either signs in or registers successfully, generate a JWT for the user containing the unique user ID
-    jwt_token = generate_user_info_jwt(email, name, image)
+    jwt_token = generate_user_info_jwt(
+        found_user.id, found_user.email, found_user.name, image
+    )
+
+    # print(jwt_token)
 
     return redirect(f"{FRONTEND_URL}?jwt={jwt_token}")
 
@@ -152,10 +158,11 @@ def logout(current_user):
 
 
 # Generate a JWT
-def generate_user_info_jwt(user_id, name, image):
+def generate_user_info_jwt(user_id, email, name, image):
     encoded_jwt = jwt.encode(
         {
             "userID": user_id,
+            "email": email,
             "name": name,
             "image": image,
             "exp": datetime.now(tz=timezone.utc)
