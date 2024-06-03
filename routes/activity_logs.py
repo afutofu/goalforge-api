@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta, timezone
 from dateutil import tz
 from middleware.token_required import token_required
-from database import dynamodb
+from database import dynamodb, db
+from models import ActivityLog
 from boto3.dynamodb.conditions import Key, Attr
 
 activity_logs_blueprint: Blueprint = Blueprint("activity_logs", __name__)
@@ -112,6 +113,123 @@ def get_activity_logs(current_user):
 
     logs_today = []
 
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    logs_today = ActivityLog.query.filter(
+        ActivityLog.UserID == current_user["userID"],
+        ActivityLog.CreatedAt >= today,
+        ActivityLog.CreatedAt < today + timedelta(days=1),
+    ).all()
+
+    return jsonify(logs_today)
+
+
+# Add activity log to the database
+# Example: POST /api/v1/activity-logs
+@activity_logs_blueprint.route("", methods=["POST"])
+@token_required
+def add_activity_log(current_user):
+
+    activity_log = request.json
+
+    print("ACTIVITY LOG:", activity_log)
+
+    new_activity_log = ActivityLog(
+        id=activity_log["activityLogID"],
+        userID=current_user["userID"],
+        text=activity_log["text"],
+        createdAt=activity_log["createdAt"],
+        updatedAt=activity_log["createdAt"],
+    )
+
+    db.session.add(new_activity_log)
+    db.session.commit()
+
+    return jsonify(new_activity_log), 201
+
+
+# Update activity log in the database
+# Example: PUT /api/v1/activity_logs/activity_log_id
+@activity_logs_blueprint.route("/<string:activity_log_id>", methods=["PUT"])
+@token_required
+def update_task(current_user, activity_log_id):
+    print("TASK ID:", activity_log_id)
+
+    edited_activity_log = request.json
+
+    found_activity_log = ActivityLog.query.filter(
+        ActivityLog.UserID == current_user["userID"],
+        ActivityLog.ID == activity_log_id,
+    ).first()
+
+    if not found_activity_log:
+        return jsonify({"error": "Activity log not found"}), 404
+
+    found_activity_log.text = edited_activity_log["text"]
+    found_activity_log.updatedAt = datetime.now(timezone.utc)
+
+    db.session.commit()
+
+    return jsonify(found_activity_log), 200
+
+    # Test fail
+    # return jsonify({"error": "Test fail rollback"}), 500
+
+
+# Delete activity log in the database
+# Example: DELETE /api/v1/activity-logs/activity_log_id
+@activity_logs_blueprint.route("/<string:activity_log_id>", methods=["DELETE"])
+@token_required
+def delete_activity_log(current_user, activity_log_id):
+
+    found_activity_log = ActivityLog.query.filter(
+        ActivityLog.UserID == current_user["userID"],
+        ActivityLog.ID == activity_log_id,
+    ).first()
+
+    if not found_activity_log:
+        return jsonify({"error": "Activity log not found"}), 404
+
+    db.session.delete(found_activity_log)
+    db.session.commit()
+
+    return jsonify({"message": "Activity log deleted successfully"}), 200
+
+
+# DEPRECATED
+# Get tasks from the database
+# Example: GET /api/v1/activity-logs?date=2024-03-27T01:53:36Z
+# "date" query parameter is in UTC
+@activity_logs_blueprint.route("", methods=["GET"])
+@token_required
+def get_activity_logs_DEPRECATED(current_user):
+    # If date is not provided, use the current date
+    date = request.args.get("date").replace(" ", " ")
+    if date is None:
+        response = {"error": "Invalid date specified"}
+        return jsonify(response), 400  # Bad Request
+
+    print("DATE UTC:", date)
+    date_format = "%Y-%m-%dT%H:%M:%SZ"
+
+    # Parse the string into a datetime object
+    dt_naive = datetime.strptime(date, date_format)
+
+    from_zone = tz.gettz("UTC")
+    to_zone = tz.tzlocal()
+
+    # Tell the datetime object that it's in UTC time zone since
+    # datetime objects are 'naive' by default
+    dt_aware = dt_naive.replace(tzinfo=from_zone)
+
+    # Convert the datetime object to the local time zone
+    local = dt_aware.astimezone(to_zone)
+
+    print("DATE DT_AWARE:", dt_aware)
+    print("DATE LOCAL:", local)
+
+    logs_today = []
+
     # for log in logs:
     #     log_date = datetime.strptime(log["createdAt"], date_format)
     #     log_date = log_date.replace(tzinfo=from_zone)
@@ -136,11 +254,12 @@ def get_activity_logs(current_user):
     return jsonify(logs_today)
 
 
+# DEPRECATED
 # Add activity log to the database
 # Example: POST /api/v1/activity-logs
 @activity_logs_blueprint.route("", methods=["POST"])
 @token_required
-def add_activity_log(current_user):
+def add_activity_log_DEPRECATED(current_user):
 
     activity_log = request.json
 
@@ -158,11 +277,12 @@ def add_activity_log(current_user):
     return jsonify(activity_log), 201
 
 
+# DEPRECATED
 # Update activity log in the database
 # Example: PUT /api/v1/activity_logs/activity_log_id
 @activity_logs_blueprint.route("/<string:activity_log_id>", methods=["PUT"])
 @token_required
-def update_task(current_user, activity_log_id):
+def update_task_DEPRECATED(current_user, activity_log_id):
     print("TASK ID:", activity_log_id)
 
     edited_activity_log = request.json
@@ -194,11 +314,12 @@ def update_task(current_user, activity_log_id):
     # return jsonify({"error": "Test fail rollback"}), 500
 
 
+# DEPRECATED
 # Delete activity log in the database
 # Example: DELETE /api/v1/activity-logs/activity_log_id
 @activity_logs_blueprint.route("/<string:activity_log_id>", methods=["DELETE"])
 @token_required
-def delete_activity_log(current_user, activity_log_id):
+def delete_activity_log_DEPRECATED(current_user, activity_log_id):
     found_activity_log = None
 
     found_activity_log = activity_logs_table.get_item(
