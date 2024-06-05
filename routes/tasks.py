@@ -89,26 +89,49 @@ def get_tasks(current_user):
     # tasks = mockGetTask(period)
     tasks = []
     if period == 0:
-        tasks = Task.query.filter_by(UserID=current_user["userID"]).all()
+        tasks = (
+            Task.query.filter_by(user_id=current_user["userID"])
+            .order_by(Task.created_at.desc())
+            .all()
+        )
     else:
-        tasks = Task.query.filter_by(UserID=current_user["userID"], period=period).all()
+        tasks = (
+            Task.query.filter_by(user_id=current_user["userID"], period=period)
+            .order_by(Task.created_at.desc())
+            .all()
+        )
+
+    tasks = [task.to_dict() for task in tasks]
+
+    # print("Tasks:", tasks)
 
     return jsonify(tasks), 200
 
 
 # Add tasks to the database
 # Example: POST /api/v1/tasks
+# Takes in a JSON object with the following keys:
+# - text: string
+# - completed: boolean
+# - period: integer
 @tasks_blueprint.route("", methods=["POST"])
 @token_required
 def add_task_(current_user):
     task = request.json
-    if "Name" not in task:
-        response = {"error": "Task name is required"}
+    if "text" not in task:
+        response = {"error": "'text' is required"}
+        return jsonify(response), 400
+
+    if "completed" not in task:
+        response = {"error": "'complete' is required"}
+        return jsonify(response), 400
+
+    if "period" not in task:
+        response = {"error": "'period' is required"}
         return jsonify(response), 400
 
     # Create a new task object
     new_task = Task(
-        id=task["taskID"],
         text=task["text"],
         completed=task["completed"],
         period=task["period"],
@@ -118,32 +141,49 @@ def add_task_(current_user):
     db.session.add(new_task)
     db.session.commit()
 
-    return jsonify(new_task), 201
+    return jsonify(new_task.to_dict()), 201
 
 
 # Update tasks from the database
 # Example: PUT /api/v1/tasks/task_id
+# Takes in a JSON object with the following:
+# - text: string
+# - completed: boolean
 @tasks_blueprint.route("/<string:task_id>", methods=["PUT"])
 @token_required
 def update_task(current_user, task_id):
     print("TASK ID:", task_id)
 
-    new_task = request.json
+    updated_task = request.json
+
+    if task_id is None:
+        response = {"error": "Task ID is required"}
+        return jsonify(response), 400
+
+    if "text" not in updated_task:
+        response = {"error": "'text' is required"}
+        return jsonify(response), 400
+
+    if "completed" not in updated_task:
+        response = {"error": "'completed' is required"}
+        return jsonify(response), 400
 
     found_task = Task.query.filter_by(
-        UserID=current_user["userID"], TaskID=task_id
+        user_id=current_user["userID"], id=task_id
     ).first()
 
     if not found_task:
         return jsonify({"error": "Task not found"}), 404
 
-    found_task.tame = new_task["text"]
-    found_task.completed = new_task["completed"]
+    found_task.text = updated_task["text"]
+    found_task.completed = updated_task["completed"]
     found_task.updated_at = datetime.now(timezone.utc)
 
     db.session.commit()
 
-    return jsonify(found_task), 200
+    print("Updated Task:", found_task.to_dict())
+
+    return jsonify(found_task.to_dict()), 200
 
 
 # Delete tasks from the database
@@ -152,8 +192,12 @@ def update_task(current_user, task_id):
 @token_required
 def delete_task(current_user, task_id):
 
+    if task_id is None:
+        response = {"error": "Task ID is required"}
+        return jsonify(response), 400
+
     found_task = Task.query.filter_by(
-        UserID=current_user["userID"], TaskID=task_id
+        user_id=current_user["userID"], id=task_id
     ).first()
 
     if not found_task:

@@ -31,6 +31,9 @@ class Task(db.Model):
     def __repr__(self):
         return "<Task %r>" % self.text
 
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
 
 class ActivityLog(db.Model):
     __tablename__ = "activity_logs"
