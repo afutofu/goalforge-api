@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta, timezone
 from dateutil import tz
 from middleware.token_required import token_required
-from database import dynamodb
+from database import dynamodb, db
+from models import ActivityLog
 from boto3.dynamodb.conditions import Key, Attr
 
 activity_logs_blueprint: Blueprint = Blueprint("activity_logs", __name__)
@@ -95,6 +96,132 @@ def get_activity_logs(current_user):
     date_format = "%Y-%m-%dT%H:%M:%SZ"
 
     # Parse the string into a datetime object
+    dt = datetime.strptime(date, date_format)
+
+    logs_today = (
+        ActivityLog.query.filter(
+            ActivityLog.user_id == current_user["userID"],
+            ActivityLog.created_at >= dt - timedelta(days=1),
+            ActivityLog.created_at < dt + timedelta(days=1),
+        )
+        .order_by(ActivityLog.created_at)
+        .all()
+    )
+
+    logs_today = [log.to_dict() for log in logs_today]
+
+    return jsonify(logs_today)
+
+
+# Add activity log to the database
+# Example: POST /api/v1/activity-logs
+# Takes in a JSON object with the following:
+# - text: string
+@activity_logs_blueprint.route("", methods=["POST"])
+@token_required
+def add_activity_log(current_user):
+
+    activity_log = request.json
+
+    if "text" not in activity_log:
+        response = {"error": "'text' is required"}
+        return jsonify(response), 400
+
+    print("ACTIVITY LOG:", activity_log)
+
+    new_activity_log = ActivityLog(
+        user_id=current_user["userID"],
+        text=activity_log["text"],
+    )
+
+    db.session.add(new_activity_log)
+    db.session.commit()
+
+    return jsonify(new_activity_log.to_dict()), 201
+
+
+# Update activity log in the database
+# Example: PUT /api/v1/activity_logs/activity_log_id
+# Takes in a JSON object with the following:
+# - text: string
+@activity_logs_blueprint.route("/<string:activity_log_id>", methods=["PUT"])
+@token_required
+def update_task(current_user, activity_log_id):
+
+    edited_activity_log = request.json
+
+    if activity_log_id is None:
+        response = {"error": "Activity log ID is required"}
+        return jsonify(response), 400
+
+    if "text" not in edited_activity_log:
+        response = {"error": "'text' is required"}
+        return jsonify(response), 400
+
+    print("TASK ID:", activity_log_id)
+
+    found_activity_log = ActivityLog.query.filter(
+        ActivityLog.user_id == current_user["userID"],
+        ActivityLog.id == activity_log_id,
+    ).first()
+
+    if not found_activity_log:
+        return jsonify({"error": "Activity log not found"}), 404
+
+    found_activity_log.text = edited_activity_log["text"]
+    found_activity_log.updated_at = datetime.now(timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+
+    db.session.commit()
+
+    return jsonify(found_activity_log.to_dict()), 200
+
+    # Test fail
+    # return jsonify({"error": "Test fail rollback"}), 500
+
+
+# Delete activity log in the database
+# Example: DELETE /api/v1/activity-logs/activity_log_id
+@activity_logs_blueprint.route("/<string:activity_log_id>", methods=["DELETE"])
+@token_required
+def delete_activity_log(current_user, activity_log_id):
+
+    if activity_log_id is None:
+        response = {"error": "Activity log ID is required"}
+        return jsonify(response), 400
+
+    found_activity_log = ActivityLog.query.filter(
+        ActivityLog.user_id == current_user["userID"],
+        ActivityLog.id == activity_log_id,
+    ).first()
+
+    if not found_activity_log:
+        return jsonify({"error": "Activity log not found"}), 404
+
+    db.session.delete(found_activity_log)
+    db.session.commit()
+
+    return jsonify({"message": "Activity log deleted successfully"}), 200
+
+
+# DEPRECATED
+# Get tasks from the database
+# Example: GET /api/v1/activity-logs?date=2024-03-27T01:53:36Z
+# "date" query parameter is in UTC
+@activity_logs_blueprint.route("", methods=["GET"])
+@token_required
+def get_activity_logs_DEPRECATED(current_user):
+    # If date is not provided, use the current date
+    date = request.args.get("date").replace(" ", " ")
+    if date is None:
+        response = {"error": "Invalid date specified"}
+        return jsonify(response), 400  # Bad Request
+
+    print("DATE UTC:", date)
+    date_format = "%Y-%m-%dT%H:%M:%SZ"
+
+    # Parse the string into a datetime object
     dt_naive = datetime.strptime(date, date_format)
 
     from_zone = tz.gettz("UTC")
@@ -127,7 +254,7 @@ def get_activity_logs(current_user):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     response = activity_logs_table.query(
-        KeyConditionExpression=Key("UserID").eq(current_user["userID"]),
+        KeyConditionExpression=Key("user_id").eq(current_user["userID"]),
         FilterExpression=Attr("CreatedAt").begins_with(today),
     )
 
@@ -136,11 +263,12 @@ def get_activity_logs(current_user):
     return jsonify(logs_today)
 
 
+# DEPRECATED
 # Add activity log to the database
 # Example: POST /api/v1/activity-logs
 @activity_logs_blueprint.route("", methods=["POST"])
 @token_required
-def add_activity_log(current_user):
+def add_activity_log_DEPRECATED(current_user):
 
     activity_log = request.json
 
@@ -158,11 +286,12 @@ def add_activity_log(current_user):
     return jsonify(activity_log), 201
 
 
+# DEPRECATED
 # Update activity log in the database
 # Example: PUT /api/v1/activity_logs/activity_log_id
 @activity_logs_blueprint.route("/<string:activity_log_id>", methods=["PUT"])
 @token_required
-def update_task(current_user, activity_log_id):
+def update_task_DEPRECATED(current_user, activity_log_id):
     print("TASK ID:", activity_log_id)
 
     edited_activity_log = request.json
@@ -194,11 +323,12 @@ def update_task(current_user, activity_log_id):
     # return jsonify({"error": "Test fail rollback"}), 500
 
 
+# DEPRECATED
 # Delete activity log in the database
 # Example: DELETE /api/v1/activity-logs/activity_log_id
 @activity_logs_blueprint.route("/<string:activity_log_id>", methods=["DELETE"])
 @token_required
-def delete_activity_log(current_user, activity_log_id):
+def delete_activity_log_DEPRECATED(current_user, activity_log_id):
     found_activity_log = None
 
     found_activity_log = activity_logs_table.get_item(
