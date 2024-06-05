@@ -46,3 +46,6 @@ class ActivityLog(db.Model):
 
     def __repr__(self):
         return "<ActivityLog %r>" % self.text
+
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}

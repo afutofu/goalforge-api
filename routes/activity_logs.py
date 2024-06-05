@@ -113,64 +113,89 @@ def get_activity_logs(current_user):
 
     logs_today = []
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = local - timedelta(
+        hours=local.hour, minutes=local.minute, seconds=local.second
+    )
+    tomorrow = local + timedelta(days=1)
 
-    logs_today = ActivityLog.query.filter(
-        ActivityLog.UserID == current_user["userID"],
-        ActivityLog.CreatedAt >= today,
-        ActivityLog.CreatedAt < today + timedelta(days=1),
-    ).all()
+    print(today, tomorrow, local)
+
+    logs_today = (
+        ActivityLog.query.filter(
+            ActivityLog.user_id == current_user["userID"],
+            ActivityLog.created_at >= today,
+            ActivityLog.created_at < tomorrow,
+        )
+        .order_by(ActivityLog.created_at)
+        .all()
+    )
+
+    logs_today = [log.to_dict() for log in logs_today]
 
     return jsonify(logs_today)
 
 
 # Add activity log to the database
 # Example: POST /api/v1/activity-logs
+# Takes in a JSON object with the following:
+# - text: string
 @activity_logs_blueprint.route("", methods=["POST"])
 @token_required
 def add_activity_log(current_user):
 
     activity_log = request.json
 
+    if "text" not in activity_log:
+        response = {"error": "'text' is required"}
+        return jsonify(response), 400
+
     print("ACTIVITY LOG:", activity_log)
 
     new_activity_log = ActivityLog(
-        id=activity_log["activityLogID"],
-        userID=current_user["userID"],
+        user_id=current_user["userID"],
         text=activity_log["text"],
-        createdAt=activity_log["createdAt"],
-        updatedAt=activity_log["createdAt"],
     )
 
     db.session.add(new_activity_log)
     db.session.commit()
 
-    return jsonify(new_activity_log), 201
+    return jsonify(new_activity_log.to_dict()), 201
 
 
 # Update activity log in the database
 # Example: PUT /api/v1/activity_logs/activity_log_id
+# Takes in a JSON object with the following:
+# - text: string
 @activity_logs_blueprint.route("/<string:activity_log_id>", methods=["PUT"])
 @token_required
 def update_task(current_user, activity_log_id):
-    print("TASK ID:", activity_log_id)
 
     edited_activity_log = request.json
 
+    if activity_log_id is None:
+        response = {"error": "Activity log ID is required"}
+        return jsonify(response), 400
+
+    if "text" not in edited_activity_log:
+        response = {"error": "'text' is required"}
+        return jsonify(response), 400
+
+    print("TASK ID:", activity_log_id)
+
     found_activity_log = ActivityLog.query.filter(
-        ActivityLog.UserID == current_user["userID"],
-        ActivityLog.ID == activity_log_id,
+        ActivityLog.user_id == current_user["userID"],
+        ActivityLog.id == activity_log_id,
     ).first()
 
     if not found_activity_log:
         return jsonify({"error": "Activity log not found"}), 404
 
     found_activity_log.text = edited_activity_log["text"]
-    found_activity_log.updatedAt = datetime.now(timezone.utc)
+    found_activity_log.updated_at = datetime.now(timezone.utc)
 
     db.session.commit()
 
-    return jsonify(found_activity_log), 200
+    return jsonify(found_activity_log.to_dict()), 200
 
     # Test fail
     # return jsonify({"error": "Test fail rollback"}), 500
@@ -182,9 +207,13 @@ def update_task(current_user, activity_log_id):
 @token_required
 def delete_activity_log(current_user, activity_log_id):
 
+    if activity_log_id is None:
+        response = {"error": "Activity log ID is required"}
+        return jsonify(response), 400
+
     found_activity_log = ActivityLog.query.filter(
-        ActivityLog.UserID == current_user["userID"],
-        ActivityLog.ID == activity_log_id,
+        ActivityLog.user_id == current_user["userID"],
+        ActivityLog.id == activity_log_id,
     ).first()
 
     if not found_activity_log:
@@ -245,7 +274,7 @@ def get_activity_logs_DEPRECATED(current_user):
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     response = activity_logs_table.query(
-        KeyConditionExpression=Key("UserID").eq(current_user["userID"]),
+        KeyConditionExpression=Key("user_id").eq(current_user["userID"]),
         FilterExpression=Attr("CreatedAt").begins_with(today),
     )
 
