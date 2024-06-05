@@ -96,35 +96,13 @@ def get_activity_logs(current_user):
     date_format = "%Y-%m-%dT%H:%M:%SZ"
 
     # Parse the string into a datetime object
-    dt_naive = datetime.strptime(date, date_format)
-
-    from_zone = tz.gettz("UTC")
-    to_zone = tz.tzlocal()
-
-    # Tell the datetime object that it's in UTC time zone since
-    # datetime objects are 'naive' by default
-    dt_aware = dt_naive.replace(tzinfo=from_zone)
-
-    # Convert the datetime object to the local time zone
-    local = dt_aware.astimezone(to_zone)
-
-    print("DATE DT_AWARE:", dt_aware)
-    print("DATE LOCAL:", local)
-
-    logs_today = []
-
-    today = local - timedelta(
-        hours=local.hour, minutes=local.minute, seconds=local.second
-    )
-    tomorrow = local + timedelta(days=1)
-
-    print(today, tomorrow, local)
+    dt = datetime.strptime(date, date_format)
 
     logs_today = (
         ActivityLog.query.filter(
             ActivityLog.user_id == current_user["userID"],
-            ActivityLog.created_at >= today,
-            ActivityLog.created_at < tomorrow,
+            ActivityLog.created_at >= dt - timedelta(days=1),
+            ActivityLog.created_at < dt + timedelta(days=1),
         )
         .order_by(ActivityLog.created_at)
         .all()
@@ -191,7 +169,9 @@ def update_task(current_user, activity_log_id):
         return jsonify({"error": "Activity log not found"}), 404
 
     found_activity_log.text = edited_activity_log["text"]
-    found_activity_log.updated_at = datetime.now(timezone.utc)
+    found_activity_log.updated_at = datetime.now(timezone.utc).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
 
     db.session.commit()
 

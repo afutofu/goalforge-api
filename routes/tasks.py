@@ -177,7 +177,7 @@ def update_task(current_user, task_id):
 
     found_task.text = updated_task["text"]
     found_task.completed = updated_task["completed"]
-    found_task.updated_at = datetime.now(timezone.utc)
+    found_task.updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     db.session.commit()
 
