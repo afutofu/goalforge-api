@@ -133,9 +133,10 @@ def fetch_user(current_user):
     return Response(
         response=json.dumps(
             {
-                "Name": current_user["name"],
-                "Email": current_user["userID"],
-                "Image": current_user["image"],
+                "id": current_user["userID"],
+                "name": current_user["name"],
+                "email": current_user["email"],
+                "image": current_user["image"],
             }
         ),
         status=200,
