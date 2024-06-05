@@ -56,6 +56,7 @@ pip install -r requirements.txt
 ## Built With
 
 - Flask
+- SQLAlchemy
 - Boto3
 
 ## Authors
