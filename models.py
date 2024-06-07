@@ -45,7 +45,7 @@ class Task(db.Model):
             "text": self.text,
             "completed": self.completed,
             "period": self.period,
-            "createdAt": self.created_at,
+            "createdAt": self.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
 
@@ -69,5 +69,5 @@ class ActivityLog(db.Model):
         return {
             "id": self.id,
             "text": self.text,
-            "createdAt": self.created_at,
+            "createdAt": self.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
