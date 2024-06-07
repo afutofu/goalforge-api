@@ -2,4 +2,4 @@ venv
 .env
 __pycache__/
 *.pem
-client_secret.json
+client-secret.json

@@ -37,18 +37,19 @@ if __name__ == "__main__":
     # When running locally, disable OAuthlib's HTTPs verification.
     # ACTION ITEM for developers:
     #     When running in production *do not* leave this option enabled.
-    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+    # os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
     with app.app_context():
         try:
             db.session.execute(text("SELECT 1"))
             print("\n\n----------- Database connection successful !")
+            print(db)
 
             # Create tables if they do not exist
             db.create_all()
         except Exception as e:
             print("\n\n----------- Connection failed ! ERROR : ", e)
 
-        # app.run()
-        app.run(debug=True)
+        app.run()
+        # app.run(debug=True)
         print("Running server.py")
