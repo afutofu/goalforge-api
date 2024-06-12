@@ -32,6 +32,16 @@ class User(db.Model):
         return "<User %r>" % self.email
 
 
+# Establish a many-to-many relationship between tasks and categories
+task_categories = db.Table(
+    "task_categories",
+    db.Column("task_id", db.Integer, db.ForeignKey("tasks.id"), primary_key=True),
+    db.Column(
+        "category_id", db.Integer, db.ForeignKey("categories.id"), primary_key=True
+    ),
+)
+
+
 class Task(db.Model):
     __tablename__ = "tasks"
 
@@ -58,6 +68,17 @@ class Task(db.Model):
             "period": self.period,
             "createdAt": self.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
+
+
+class Category(db.Model):
+    __tablename__ = "categories"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    tasks = db.relationship(
+        "Task", backref="category", lazy="subquery", secondary=task_categories
+    )
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
 
 class ActivityLog(db.Model):
