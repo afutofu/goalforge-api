@@ -87,6 +87,14 @@ class Category(db.Model):
         db.DateTime, default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "color": self.color,
+            "createdAt": self.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+
 
 class ActivityLog(db.Model):
     __tablename__ = "activity_logs"
