@@ -75,6 +75,7 @@ class Category(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
+    color = db.Column(db.String(120), nullable=False)
     tasks = db.relationship(
         "Task", backref="category", lazy="subquery", secondary=task_categories
     )
