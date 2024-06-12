@@ -15,6 +15,7 @@ from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 
 from middleware.token_required import token_required
+from config import hash_value, cipher_suite
 
 
 SCOPES = [
@@ -101,7 +102,11 @@ def oauth_google_callback():
     image = id_info["picture"]
 
     # Check if user exists in the databse
-    found_user = User.query.filter_by(email=email).first()
+    # found_user = User.query.filter_by(email=email).first()
+    hashed_email = hash_value(email)
+    print("hashed email", hashed_email)
+
+    found_user = User.query.filter_by(hashed_email=hashed_email).first()
 
     # If user does not exist, register the user in the database
     if not found_user:
@@ -113,11 +118,14 @@ def oauth_google_callback():
         db.session.add(new_user)
         db.session.commit()
 
-        found_user = User.query.filter_by(email=email).first()
+        found_user = User.query.filter_by(hashed_email=hashed_email).first()
+
+    decrypted_email = cipher_suite.decrypt(found_user.encrypted_email.encode()).decode()
+    decrypted_name = cipher_suite.decrypt(found_user.encrypted_name.encode()).decode()
 
     # If user either signs in or registers successfully, generate a JWT for the user containing the unique user ID
     jwt_token = generate_user_info_jwt(
-        found_user.id, found_user.email, found_user.name, image
+        found_user.id, decrypted_email, decrypted_name, image
     )
 
     # print(jwt_token)
