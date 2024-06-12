@@ -1,14 +1,16 @@
 from datetime import datetime, timezone
 from database import db
+from config import cipher_suite, hash_value, hash_password
 
 
 class User(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    name = db.Column(db.String(120), nullable=False)
-    password = db.Column(db.String(120), nullable=True)
+    encrypted_email = db.Column(db.String(120), unique=True, nullable=False)
+    encrypted_name = db.Column(db.String(120), nullable=False)
+    hashed_email = db.Column(db.String(120), nullable=False)
+    hashed_password = db.Column(db.String(120), nullable=True)
     signup_method = db.Column(db.String(120), nullable=False)
     created_at = db.Column(
         db.DateTime, default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -16,6 +18,15 @@ class User(db.Model):
     updated_at = db.Column(
         db.DateTime, default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
+
+    def __init__(self, email, name, signup_method, password=None) -> None:
+        self.encrypted_email = cipher_suite.encrypt(email.encode()).decode()
+        self.encrypted_name = cipher_suite.encrypt(name.encode()).decode()
+        self.hashed_email = hash_value(email)
+        self.signup_method = signup_method
+
+        if password:
+            self.hashed_password = hash_password(password)
 
     def __repr__(self):
         return "<User %r>" % self.email
