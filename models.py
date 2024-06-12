@@ -80,6 +80,12 @@ class Category(db.Model):
         "Task", backref="category", lazy="subquery", secondary=task_categories
     )
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(
+        db.DateTime, default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
+    updated_at = db.Column(
+        db.DateTime, default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
 
 
 class ActivityLog(db.Model):
