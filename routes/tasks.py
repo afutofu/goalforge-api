@@ -130,12 +130,16 @@ def add_task_(current_user):
         response = {"error": "'period' is required"}
         return jsonify(response), 400
 
+    current_utc_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     # Create a new task object
     new_task = Task(
         text=task["text"],
         completed=task["completed"],
         period=task["period"],
         user_id=current_user["userID"],
+        created_at=current_utc_time,
+        updated_at=current_utc_time,
     )
 
     db.session.add(new_task)

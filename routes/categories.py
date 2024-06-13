@@ -58,11 +58,15 @@ def add_category(current_user):
         response = {"error": "'color' cannot be empty"}
         return jsonify(response), 400
 
+    current_utc_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     # Create a new category object
     new_category = Category(
         name=category["name"],
         color=category["color"],
         user_id=current_user["userID"],
+        created_at=current_utc_time,
+        updated_at=current_utc_time,
     )
 
     db.session.add(new_category)

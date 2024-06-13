@@ -108,6 +108,8 @@ def get_activity_logs(current_user):
         .all()
     )
 
+    print("UTC TIME NOW:", datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+
     logs_today = [log.to_dict() for log in logs_today]
 
     return jsonify(logs_today)
@@ -129,9 +131,13 @@ def add_activity_log(current_user):
 
     print("ACTIVITY LOG:", activity_log)
 
+    current_utc_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
     new_activity_log = ActivityLog(
         user_id=current_user["userID"],
         text=activity_log["text"],
+        created_at=current_utc_time,
+        updated_at=current_utc_time,
     )
 
     db.session.add(new_activity_log)
