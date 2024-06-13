@@ -15,7 +15,7 @@ from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 
 from middleware.token_required import token_required
-from config import hash_value, cipher_suite
+from config import hash_value, cipher_suite, initialize_user_data
 
 
 SCOPES = [
@@ -119,6 +119,10 @@ def oauth_google_callback():
         db.session.commit()
 
         found_user = User.query.filter_by(hashed_email=hashed_email).first()
+
+        # Initialize user data
+        print("INITIALIZING USER DATA")
+        initialize_user_data(found_user.id)
 
     decrypted_email = cipher_suite.decrypt(found_user.encrypted_email.encode()).decode()
     decrypted_name = cipher_suite.decrypt(found_user.encrypted_name.encode()).decode()

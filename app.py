@@ -52,7 +52,7 @@ if __name__ == "__main__":
             print(db)
 
             # Create tables if they do not exist
-            # db.create_all()
+            db.create_all()
 
         except Exception as e:
             print("\n\n----------- Connection failed ! ERROR : ", e)
