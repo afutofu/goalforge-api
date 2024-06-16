@@ -53,6 +53,9 @@ class Task(db.Model):
     completed = db.Column(db.Boolean, default=False)
     period = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    categories = db.relationship(
+        "Category", backref="task", lazy="subquery", secondary=task_categories
+    )
     created_at = db.Column(
         db.DateTime, default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     )
@@ -69,6 +72,15 @@ class Task(db.Model):
             "text": self.text,
             "completed": self.completed,
             "period": self.period,
+            "categories": [
+                {
+                    "id": category.id,
+                    "name": category.name,
+                    "color": category.color,
+                    "createdAt": self.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+                for category in self.categories
+            ],
             "createdAt": self.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
@@ -95,6 +107,15 @@ class Category(db.Model):
             "id": self.id,
             "name": self.name,
             "color": self.color,
+            "tasks": [
+                {
+                    "text": task.text,
+                    "completed": task.completed,
+                    "period": task.period,
+                    "createdAt": task.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+                for task in self.tasks
+            ],
             "createdAt": self.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
