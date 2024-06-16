@@ -108,7 +108,7 @@ def initialize_user_data(user_id):
     category2.tasks.append(task10)
 
     # Work category
-    category3.tasks.append(task2)
+    category3.tasks.append(task3)
     category3.tasks.append(task7)
     category3.tasks.append(task11)
 
