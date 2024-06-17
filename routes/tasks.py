@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from middleware.token_required import token_required
 from database import dynamodb, db
-from models import Task
+from models import Category, Task
 from boto3.dynamodb.conditions import Key
 from datetime import datetime, timezone
 
@@ -123,7 +123,15 @@ def add_task_(current_user):
         return jsonify(response), 400
 
     if "completed" not in task:
-        response = {"error": "'complete' is required"}
+        response = {"error": "'completed' is required"}
+        return jsonify(response), 400
+
+    if "categories" not in task:
+        response = {"error": "'categories' is required"}
+        return jsonify(response), 400
+
+    if task["categories"] is None:
+        response = {"error": "'categories' cannot be empty"}
         return jsonify(response), 400
 
     if "period" not in task:
@@ -141,6 +149,13 @@ def add_task_(current_user):
         created_at=current_utc_time,
         updated_at=current_utc_time,
     )
+
+    # Add categories to the task
+    for category in task["categories"]:
+        model_category = Category.query.filter_by(
+            user_id=current_user["userID"], id=category["id"]
+        ).first()
+        new_task.categories.append(model_category)
 
     db.session.add(new_task)
     db.session.commit()
@@ -206,6 +221,11 @@ def delete_task(current_user, task_id):
 
     if not found_task:
         return jsonify({"error": "Task not found"}), 404
+
+    # Remove all associations
+    for category in found_task.categories:
+        found_task.categories.remove(category)
+    db.session.commit()  # Commit to update the association table
 
     db.session.delete(found_task)
     db.session.commit()

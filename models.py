@@ -54,7 +54,10 @@ class Task(db.Model):
     period = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     categories = db.relationship(
-        "Category", backref="task", lazy="subquery", secondary=task_categories
+        "Category",
+        backref="task",
+        lazy="subquery",
+        secondary=task_categories,
     )
     created_at = db.Column(
         db.DateTime, default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
