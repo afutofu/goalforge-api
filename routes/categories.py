@@ -19,7 +19,7 @@ def get_categories(current_user):
     categories = []
     categories = (
         Category.query.filter_by(user_id=current_user["userID"])
-        .order_by(Category.created_at.desc())
+        .order_by(Category.created_at.asc())
         .all()
     )
 
