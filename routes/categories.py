@@ -80,7 +80,7 @@ def add_category(current_user):
 # Takes in a JSON object with the following:
 # - name: string
 # - color: boolean
-@categories_blueprint.route("/<string:category_id>", methods=["PATCH"])
+@categories_blueprint.route("/<string:category_id>", methods=["PUT"])
 @token_required
 def update_category(current_user, category_id):
     print("CATEGORY ID:", category_id)
