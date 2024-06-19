@@ -168,6 +168,10 @@ def add_task_(current_user):
 # Takes in a JSON object with the following:
 # - text: string
 # - completed: boolean
+# - categories: list of category objects
+#               - id: integer
+#               - name: string
+#               - color: string
 @tasks_blueprint.route("/<string:task_id>", methods=["PUT"])
 @token_required
 def update_task(current_user, task_id):
@@ -187,6 +191,14 @@ def update_task(current_user, task_id):
         response = {"error": "'completed' is required"}
         return jsonify(response), 400
 
+    if "categories" not in updated_task:
+        response = {"error": "'categories' is required"}
+        return jsonify(response), 400
+
+    if updated_task["categories"] is None:
+        response = {"error": "'categories' cannot be empty"}
+        return jsonify(response), 400
+
     found_task = Task.query.filter_by(
         user_id=current_user["userID"], id=task_id
     ).first()
@@ -196,6 +208,19 @@ def update_task(current_user, task_id):
 
     found_task.text = updated_task["text"]
     found_task.completed = updated_task["completed"]
+
+    # Update categories
+    # First clear current categories in the task
+    found_task.categories.clear()
+
+    db.session.commit()  # Commit to update the association table first
+
+    for category in updated_task["categories"]:
+        model_category = Category.query.filter_by(
+            user_id=current_user["userID"], id=category["id"]
+        ).first()
+        found_task.categories.append(model_category)
+
     found_task.updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     db.session.commit()
