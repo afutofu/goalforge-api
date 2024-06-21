@@ -78,8 +78,8 @@ def initialize_user_data(user_id):
     db.session.commit()
 
     # Create a few categories for the user
-    # "No Category" will have default id of 0
-    category1 = Category(id=0, name="No Category", color="#ffffff", user_id=user_id)
+    # "No Category" will have default id of 1
+    category1 = Category(id=1, name="No Category", color="#ffffff", user_id=user_id)
     category2 = Category(name="Personal", color="#00ff00", user_id=user_id)
     category3 = Category(name="Work", color="#0000ff", user_id=user_id)
     category4 = Category(name="Health", color="#ff0000", user_id=user_id)
