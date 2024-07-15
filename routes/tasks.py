@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from middleware.token_required import token_required
 from database import dynamodb, db
-from models import Category, Task
+from models import Goal, Task
 from boto3.dynamodb.conditions import Key
 from datetime import datetime, timezone
 
@@ -152,7 +152,7 @@ def add_task_(current_user):
 
     # Add categories to the task
     for category in task["categories"]:
-        model_category = Category.query.filter_by(
+        model_category = Goal.query.filter_by(
             user_id=current_user["userID"], id=category["id"]
         ).first()
         new_task.categories.append(model_category)
@@ -216,7 +216,7 @@ def update_task(current_user, task_id):
     db.session.commit()  # Commit to update the association table first
 
     for category in updated_task["categories"]:
-        model_category = Category.query.filter_by(
+        model_category = Goal.query.filter_by(
             user_id=current_user["userID"], id=category["id"]
         ).first()
         found_task.categories.append(model_category)

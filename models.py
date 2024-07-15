@@ -54,7 +54,7 @@ class Task(db.Model):
     period = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     categories = db.relationship(
-        "Category",
+        "Goal",
         backref="task",
         lazy="subquery",
         secondary=task_categories,
@@ -88,7 +88,7 @@ class Task(db.Model):
         }
 
 
-class Category(db.Model):
+class Goal(db.Model):
     __tablename__ = "categories"
 
     id = db.Column(db.Integer, primary_key=True)

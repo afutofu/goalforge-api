@@ -40,7 +40,7 @@ def verify_password(stored_password, provided_password):
 
 def initialize_user_data(user_id):
     from models import Task
-    from models import Category
+    from models import Goal
     from models import ActivityLog
 
     # Create a few tasks for the user
@@ -79,10 +79,10 @@ def initialize_user_data(user_id):
 
     # Create a few categories for the user
     # "No Category" will have default id of 1
-    category1 = Category(id=1, name="No Category", color="#ffffff", user_id=user_id)
-    category2 = Category(name="Personal", color="#00ff00", user_id=user_id)
-    category3 = Category(name="Work", color="#0000ff", user_id=user_id)
-    category4 = Category(name="Health", color="#ff0000", user_id=user_id)
+    category1 = Goal(id=1, name="No Category", color="#ffffff", user_id=user_id)
+    category2 = Goal(name="Personal", color="#00ff00", user_id=user_id)
+    category3 = Goal(name="Work", color="#0000ff", user_id=user_id)
+    category4 = Goal(name="Health", color="#ff0000", user_id=user_id)
 
     # Add categories to the database
     db.session.add(category1)

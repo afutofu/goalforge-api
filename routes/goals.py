@@ -1,10 +1,9 @@
 from flask import Blueprint, request, jsonify
 from middleware.token_required import token_required
 from database import db
-from models import Category
+from models import Goal
 from boto3.dynamodb.conditions import Key
 from datetime import datetime, timezone
-from models import Category
 
 categories_blueprint: Blueprint = Blueprint("categories", __name__)
 
@@ -18,8 +17,8 @@ def get_categories(current_user):
     # Logic to fetch categories based on the period
     categories = []
     categories = (
-        Category.query.filter_by(user_id=current_user["userID"])
-        .order_by(Category.created_at.asc())
+        Goal.query.filter_by(user_id=current_user["userID"])
+        .order_by(Goal.created_at.asc())
         .all()
     )
 
@@ -61,7 +60,7 @@ def add_category(current_user):
     current_utc_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # Create a new category object
-    new_category = Category(
+    new_category = Goal(
         name=category["name"],
         color=category["color"],
         user_id=current_user["userID"],
@@ -110,7 +109,7 @@ def update_category(current_user, category_id):
         response = {"error": "'color' cannot be empty"}
         return jsonify(response), 400
 
-    found_category = Category.query.filter_by(
+    found_category = Goal.query.filter_by(
         user_id=current_user["userID"], id=category_id
     ).first()
 
@@ -140,7 +139,7 @@ def delete_category(current_user, category_id):
         response = {"error": "Category ID is required"}
         return jsonify(response), 400
 
-    found_category = Category.query.filter_by(
+    found_category = Goal.query.filter_by(
         user_id=current_user["userID"], id=category_id
     ).first()
 
