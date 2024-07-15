@@ -12,7 +12,7 @@ class User(db.Model):
     hashed_email = db.Column(db.String(120), nullable=False)
     hashed_password = db.Column(db.String(120), nullable=True)
     tasks = db.relationship("Task", backref="user", lazy="subquery")
-    categories = db.relationship("Category", backref="user", lazy="subquery")
+    goals = db.relationship("Goals", backref="user", lazy="subquery")
     activity_logs = db.relationship("ActivityLog", backref="user", lazy="subquery")
     signup_method = db.Column(db.String(120), nullable=False)
     created_at = db.Column(
@@ -35,13 +35,11 @@ class User(db.Model):
         return "<User %r>" % self.email
 
 
-# Establish a many-to-many relationship between tasks and categories
-task_categories = db.Table(
-    "task_categories",
+# Establish a many-to-many relationship between tasks and goals
+task_goal = db.Table(
+    "task_goal",
     db.Column("task_id", db.Integer, db.ForeignKey("tasks.id"), primary_key=True),
-    db.Column(
-        "category_id", db.Integer, db.ForeignKey("categories.id"), primary_key=True
-    ),
+    db.Column("goal_id", db.Integer, db.ForeignKey("goals.id"), primary_key=True),
 )
 
 
@@ -53,11 +51,11 @@ class Task(db.Model):
     completed = db.Column(db.Boolean, default=False)
     period = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    categories = db.relationship(
+    goals = db.relationship(
         "Goal",
         backref="task",
         lazy="subquery",
-        secondary=task_categories,
+        secondary=task_goal,
     )
     created_at = db.Column(
         db.DateTime, default=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -75,27 +73,27 @@ class Task(db.Model):
             "text": self.text,
             "completed": self.completed,
             "period": self.period,
-            "categories": [
+            "goals": [
                 {
-                    "id": category.id,
-                    "name": category.name,
-                    "color": category.color,
+                    "id": goal.id,
+                    "name": goal.name,
+                    "color": goal.color,
                     "createdAt": self.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 }
-                for category in self.categories
+                for goal in self.goals
             ],
             "createdAt": self.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
 
 
 class Goal(db.Model):
-    __tablename__ = "categories"
+    __tablename__ = "goals"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     color = db.Column(db.String(120), nullable=False)
     tasks = db.relationship(
-        "Task", backref="category", lazy="subquery", secondary=task_categories
+        "Task", backref="goal", lazy="subquery", secondary=task_goal
     )
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(

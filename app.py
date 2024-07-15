@@ -3,7 +3,7 @@ from flask_cors import CORS
 from sqlalchemy import text
 from flask_migrate import Migrate
 from routes.tasks import tasks_blueprint
-from routes.categories import categories_blueprint
+from routes.goals import categories_blueprint
 from routes.activity_logs import activity_logs_blueprint
 from routes.auth import auth_blueprint
 import os
