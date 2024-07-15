@@ -126,12 +126,12 @@ def add_task_(current_user):
         response = {"error": "'completed' is required"}
         return jsonify(response), 400
 
-    if "categories" not in task:
-        response = {"error": "'categories' is required"}
+    if "goals" not in task:
+        response = {"error": "'goals' is required"}
         return jsonify(response), 400
 
-    if task["categories"] is None:
-        response = {"error": "'categories' cannot be empty"}
+    if task["goals"] is None:
+        response = {"error": "'goals' cannot be empty"}
         return jsonify(response), 400
 
     if "period" not in task:
@@ -150,12 +150,12 @@ def add_task_(current_user):
         updated_at=current_utc_time,
     )
 
-    # Add categories to the task
-    for category in task["categories"]:
-        model_category = Goal.query.filter_by(
-            user_id=current_user["userID"], id=category["id"]
+    # Add goals to the task
+    for goal in task["goals"]:
+        model_goal = Goal.query.filter_by(
+            user_id=current_user["userID"], id=goal["id"]
         ).first()
-        new_task.categories.append(model_category)
+        new_task.goals.append(model_goal)
 
     db.session.add(new_task)
     db.session.commit()
@@ -168,7 +168,7 @@ def add_task_(current_user):
 # Takes in a JSON object with the following:
 # - text: string
 # - completed: boolean
-# - categories: list of category objects
+# - goals: list of goal objects
 #               - id: integer
 #               - name: string
 #               - color: string
@@ -191,12 +191,12 @@ def update_task(current_user, task_id):
         response = {"error": "'completed' is required"}
         return jsonify(response), 400
 
-    if "categories" not in updated_task:
-        response = {"error": "'categories' is required"}
+    if "goals" not in updated_task:
+        response = {"error": "'goals' is required"}
         return jsonify(response), 400
 
-    if updated_task["categories"] is None:
-        response = {"error": "'categories' cannot be empty"}
+    if updated_task["goals"] is None:
+        response = {"error": "'goals' cannot be empty"}
         return jsonify(response), 400
 
     found_task = Task.query.filter_by(
@@ -209,17 +209,17 @@ def update_task(current_user, task_id):
     found_task.text = updated_task["text"]
     found_task.completed = updated_task["completed"]
 
-    # Update categories
-    # First clear current categories in the task
-    found_task.categories.clear()
+    # Update goals
+    # First clear current goals in the task
+    found_task.goals.clear()
 
     db.session.commit()  # Commit to update the association table first
 
-    for category in updated_task["categories"]:
-        model_category = Goal.query.filter_by(
-            user_id=current_user["userID"], id=category["id"]
+    for goal in updated_task["goals"]:
+        model_goal = Goal.query.filter_by(
+            user_id=current_user["userID"], id=goal["id"]
         ).first()
-        found_task.categories.append(model_category)
+        found_task.goals.append(model_goal)
 
     found_task.updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -248,8 +248,8 @@ def delete_task(current_user, task_id):
         return jsonify({"error": "Task not found"}), 404
 
     # Remove all associations
-    for category in found_task.categories:
-        found_task.categories.remove(category)
+    for goal in found_task.goals:
+        found_task.goals.remove(goal)
     db.session.commit()  # Commit to update the association table
 
     db.session.delete(found_task)

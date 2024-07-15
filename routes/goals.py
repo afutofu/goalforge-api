@@ -5,49 +5,49 @@ from models import Goal
 from boto3.dynamodb.conditions import Key
 from datetime import datetime, timezone
 
-categories_blueprint: Blueprint = Blueprint("categories", __name__)
+goals_blueprint: Blueprint = Blueprint("goals", __name__)
 
 
-# Get user's categories from the database
-# Example: GET /api/v1/categories
-@categories_blueprint.route("", methods=["GET"])
+# Get user's goals from the database
+# Example: GET /api/v1/goals
+@goals_blueprint.route("", methods=["GET"])
 @token_required
-def get_categories(current_user):
+def get_goals(current_user):
 
-    # Logic to fetch categories based on the period
-    categories = []
-    categories = (
+    # Logic to fetch goals based on the period
+    goals = []
+    goals = (
         Goal.query.filter_by(user_id=current_user["userID"])
         .order_by(Goal.created_at.asc())
         .all()
     )
 
-    categories = [category.to_dict() for category in categories]
+    goals = [goal.to_dict() for goal in goals]
 
-    # print("categories:", categories)
+    # print("goals:", goals)
 
-    return jsonify(categories), 200
+    return jsonify(goals), 200
 
 
-# Add categories to the database
-# Example: POST /api/v1/categories
+# Add goals to the database
+# Example: POST /api/v1/goals
 # Takes in a JSON object with the following keys:
 # - name: string
 # - color: boolean
-@categories_blueprint.route("", methods=["POST"])
+@goals_blueprint.route("", methods=["POST"])
 @token_required
-def add_category(current_user):
-    category = request.json
-    if "name" not in category:
+def add_goal(current_user):
+    goal = request.json
+    if "name" not in goal:
         response = {"error": "'name' is required"}
         return jsonify(response), 400
 
-    if "color" not in category:
+    if "color" not in goal:
         response = {"error": "'color' is required"}
         return jsonify(response), 400
 
-    name = category["name"].strip()
-    color = category["color"].strip()
+    name = goal["name"].strip()
+    color = goal["color"].strip()
 
     if name == "":
         response = {"error": "'name' cannot be empty"}
@@ -59,47 +59,47 @@ def add_category(current_user):
 
     current_utc_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # Create a new category object
-    new_category = Goal(
-        name=category["name"],
-        color=category["color"],
+    # Create a new goal object
+    new_goal = Goal(
+        name=goal["name"],
+        color=goal["color"],
         user_id=current_user["userID"],
         created_at=current_utc_time,
         updated_at=current_utc_time,
     )
 
-    db.session.add(new_category)
+    db.session.add(new_goal)
     db.session.commit()
 
-    return jsonify(new_category.to_dict()), 201
+    return jsonify(new_goal.to_dict()), 201
 
 
-# Update categories from the database
-# Example: PUT /api/v1/categories/category_id
+# Update goals from the database
+# Example: PUT /api/v1/goals/goal_id
 # Takes in a JSON object with the following:
 # - name: string
 # - color: boolean
-@categories_blueprint.route("/<string:category_id>", methods=["PUT"])
+@goals_blueprint.route("/<string:goal_id>", methods=["PUT"])
 @token_required
-def update_category(current_user, category_id):
-    print("CATEGORY ID:", category_id)
+def update_goal(current_user, goal_id):
+    print("GOAL ID:", goal_id)
 
-    updated_category = request.json
+    updated_goal = request.json
 
-    if category_id is None:
-        response = {"error": "Category ID is required"}
+    if goal_id is None:
+        response = {"error": "goal ID is required"}
         return jsonify(response), 400
 
-    if "name" not in updated_category:
+    if "name" not in updated_goal:
         response = {"error": "'name' is required"}
         return jsonify(response), 400
 
-    if "color" not in updated_category:
+    if "color" not in updated_goal:
         response = {"error": "'color' is required"}
         return jsonify(response), 400
 
-    name = updated_category["name"].strip()
-    color = updated_category["color"].strip()
+    name = updated_goal["name"].strip()
+    color = updated_goal["color"].strip()
 
     if name == "":
         response = {"error": "'name' cannot be empty"}
@@ -109,44 +109,42 @@ def update_category(current_user, category_id):
         response = {"error": "'color' cannot be empty"}
         return jsonify(response), 400
 
-    found_category = Goal.query.filter_by(
-        user_id=current_user["userID"], id=category_id
+    found_goal = Goal.query.filter_by(
+        user_id=current_user["userID"], id=goal_id
     ).first()
 
-    if not found_category:
-        return jsonify({"error": "Category not found"}), 404
+    if not found_goal:
+        return jsonify({"error": "goal not found"}), 404
 
-    found_category.name = updated_category["name"]
-    found_category.color = updated_category["color"]
-    found_category.updated_at = datetime.now(timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
+    found_goal.name = updated_goal["name"]
+    found_goal.color = updated_goal["color"]
+    found_goal.updated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     db.session.commit()
 
-    print("Updated Category:", found_category.to_dict())
+    print("Updated Goal:", found_goal.to_dict())
 
-    return jsonify(found_category.to_dict()), 200
+    return jsonify(found_goal.to_dict()), 200
 
 
-# Delete categories from the database
-# Example: DELETE /api/v1/categories/category_id
-@categories_blueprint.route("/<string:category_id>", methods=["DELETE"])
+# Delete goals from the database
+# Example: DELETE /api/v1/goals/goal_id
+@goals_blueprint.route("/<string:goal_id>", methods=["DELETE"])
 @token_required
-def delete_category(current_user, category_id):
+def delete_goal(current_user, goal_id):
 
-    if category_id is None:
-        response = {"error": "Category ID is required"}
+    if goal_id is None:
+        response = {"error": "Goal ID is required"}
         return jsonify(response), 400
 
-    found_category = Goal.query.filter_by(
-        user_id=current_user["userID"], id=category_id
+    found_goal = Goal.query.filter_by(
+        user_id=current_user["userID"], id=goal_id
     ).first()
 
-    if not found_category:
-        return jsonify({"error": "Category not found"}), 404
+    if not found_goal:
+        return jsonify({"error": "Goal not found"}), 404
 
-    db.session.delete(found_category)
+    db.session.delete(found_goal)
     db.session.commit()
 
-    return jsonify({"message": "Category deleted successfully"}), 200
+    return jsonify({"message": "Goal deleted successfully"}), 200

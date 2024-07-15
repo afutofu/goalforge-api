@@ -78,17 +78,17 @@ def initialize_user_data(user_id):
     db.session.commit()
 
     # Create a few categories for the user
-    # "No Category" will have default id of 1
-    category1 = Goal(id=1, name="No Category", color="#ffffff", user_id=user_id)
-    category2 = Goal(name="Personal", color="#00ff00", user_id=user_id)
-    category3 = Goal(name="Work", color="#0000ff", user_id=user_id)
-    category4 = Goal(name="Health", color="#ff0000", user_id=user_id)
+    # "No Goal" will have default id of 1
+    goal1 = Goal(id=1, name="No Goal", color="#ffffff", user_id=user_id)
+    goal2 = Goal(name="Personal", color="#00ff00", user_id=user_id)
+    goal3 = Goal(name="Work", color="#0000ff", user_id=user_id)
+    goal4 = Goal(name="Health", color="#ff0000", user_id=user_id)
 
     # Add categories to the database
-    db.session.add(category1)
-    db.session.add(category2)
-    db.session.add(category3)
-    db.session.add(category4)
+    db.session.add(goal1)
+    db.session.add(goal2)
+    db.session.add(goal3)
+    db.session.add(goal4)
     db.session.commit()
 
     # Create an activity log for the user
@@ -99,21 +99,21 @@ def initialize_user_data(user_id):
     db.session.commit()
 
     # Add tasks to categories
-    # Personal category
-    category2.tasks.append(task1)
-    category2.tasks.append(task2)
-    category2.tasks.append(task4)
-    category2.tasks.append(task6)
-    category2.tasks.append(task8)
-    category2.tasks.append(task9)
-    category2.tasks.append(task10)
+    # Personal goal
+    goal2.tasks.append(task1)
+    goal2.tasks.append(task2)
+    goal2.tasks.append(task4)
+    goal2.tasks.append(task6)
+    goal2.tasks.append(task8)
+    goal2.tasks.append(task9)
+    goal2.tasks.append(task10)
 
-    # Work category
-    category3.tasks.append(task3)
-    category3.tasks.append(task7)
-    category3.tasks.append(task11)
+    # Work goal
+    goal3.tasks.append(task3)
+    goal3.tasks.append(task7)
+    goal3.tasks.append(task11)
 
-    # Health category
-    category4.tasks.append(task5)
+    # Health goal
+    goal4.tasks.append(task5)
 
     db.session.commit()

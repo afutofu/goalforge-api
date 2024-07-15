@@ -3,7 +3,7 @@ from flask_cors import CORS
 from sqlalchemy import text
 from flask_migrate import Migrate
 from routes.tasks import tasks_blueprint
-from routes.goals import categories_blueprint
+from routes.goals import goals_blueprint
 from routes.activity_logs import activity_logs_blueprint
 from routes.auth import auth_blueprint
 import os
@@ -23,7 +23,7 @@ CORS(app)
 
 # Register the route blueprints
 app.register_blueprint(tasks_blueprint, url_prefix="/api/v1/tasks")
-app.register_blueprint(categories_blueprint, url_prefix="/api/v1/categories")
+app.register_blueprint(goals_blueprint, url_prefix="/api/v1/goals")
 app.register_blueprint(activity_logs_blueprint, url_prefix="/api/v1/activity-logs")
 app.register_blueprint(auth_blueprint, url_prefix="/api/v1/auth")
 
