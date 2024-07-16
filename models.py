@@ -12,7 +12,7 @@ class User(db.Model):
     hashed_email = db.Column(db.String(120), nullable=False)
     hashed_password = db.Column(db.String(120), nullable=True)
     tasks = db.relationship("Task", backref="user", lazy="subquery")
-    goals = db.relationship("Goals", backref="user", lazy="subquery")
+    goals = db.relationship("Goal", backref="user", lazy="subquery")
     activity_logs = db.relationship("ActivityLog", backref="user", lazy="subquery")
     signup_method = db.Column(db.String(120), nullable=False)
     created_at = db.Column(
