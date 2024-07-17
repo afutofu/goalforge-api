@@ -40,34 +40,36 @@ def verify_password(stored_password, provided_password):
 
 def initialize_user_data(user_id):
     from models import Task
-    from models import Category
+    from models import Goal
     from models import ActivityLog
 
     # Create a few tasks for the user
     # Day tasks
-    task1 = Task(text="Buy groceries", completed=False, period=1, user_id=user_id)
-    task2 = Task(text="Walk the dog", completed=False, period=1, user_id=user_id)
+    task1 = Task(
+        text="Finish page 50 of Book 1", completed=False, period=1, user_id=user_id
+    )
+    # task2 = Task(text="Walk the dog", completed=False, period=1, user_id=user_id)
     task3 = Task(text="Meeting at 1", completed=False, period=1, user_id=user_id)
-    task4 = Task(text="Do laundry", completed=False, period=1, user_id=user_id)
+    # task4 = Task(text="Do laundry", completed=False, period=1, user_id=user_id)
     task5 = Task(text="Exercise", completed=False, period=1, user_id=user_id)
 
     # Week tasks
-    task6 = Task(text="Clean the house", completed=False, period=2, user_id=user_id)
+    task6 = Task(text="Finish book 1", completed=False, period=2, user_id=user_id)
     task7 = Task(text="Work on project", completed=False, period=2, user_id=user_id)
 
     # Month tasks
-    task8 = Task(text="Pay bills", completed=False, period=3, user_id=user_id)
-    task9 = Task(text="Plan vacation", completed=False, period=3, user_id=user_id)
+    task8 = Task(text="Read half of book 2", completed=False, period=3, user_id=user_id)
+    task9 = Task(text="Finish book 2", completed=False, period=3, user_id=user_id)
 
     # Year tasks
-    task10 = Task(text="Set goals", completed=False, period=4, user_id=user_id)
+    task10 = Task(text="Finish book 3", completed=False, period=4, user_id=user_id)
     task11 = Task(text="Review progress", completed=False, period=4, user_id=user_id)
 
     # Add tasks to the database
     db.session.add(task1)
-    db.session.add(task2)
+    # db.session.add(task2)
     db.session.add(task3)
-    db.session.add(task4)
+    # db.session.add(task4)
     db.session.add(task5)
     db.session.add(task6)
     db.session.add(task7)
@@ -77,18 +79,17 @@ def initialize_user_data(user_id):
     db.session.add(task11)
     db.session.commit()
 
-    # Create a few categories for the user
-    # "No Category" will have default id of 1
-    category1 = Category(id=1, name="No Category", color="#ffffff", user_id=user_id)
-    category2 = Category(name="Personal", color="#00ff00", user_id=user_id)
-    category3 = Category(name="Work", color="#0000ff", user_id=user_id)
-    category4 = Category(name="Health", color="#ff0000", user_id=user_id)
+    # Create a few goals for the new user
+    goal1 = Goal(name="No Goal", color="#ffffff", user_id=user_id)
+    goal2 = Goal(name="Read 3 books", color="#00ff00", user_id=user_id)
+    goal3 = Goal(name="Complete project", color="#0000ff", user_id=user_id)
+    goal4 = Goal(name="Lose 10lbs", color="#ff0000", user_id=user_id)
 
-    # Add categories to the database
-    db.session.add(category1)
-    db.session.add(category2)
-    db.session.add(category3)
-    db.session.add(category4)
+    # Add goals to the database
+    db.session.add(goal1)
+    db.session.add(goal2)
+    db.session.add(goal3)
+    db.session.add(goal4)
     db.session.commit()
 
     # Create an activity log for the user
@@ -98,22 +99,22 @@ def initialize_user_data(user_id):
     db.session.add(activity_log)
     db.session.commit()
 
-    # Add tasks to categories
-    # Personal category
-    category2.tasks.append(task1)
-    category2.tasks.append(task2)
-    category2.tasks.append(task4)
-    category2.tasks.append(task6)
-    category2.tasks.append(task8)
-    category2.tasks.append(task9)
-    category2.tasks.append(task10)
+    # Add tasks to goals
+    # Read 3 books goal
+    goal2.tasks.append(task1)
+    # goal2.tasks.append(task2)
+    # goal2.tasks.append(task4)
+    goal2.tasks.append(task6)
+    goal2.tasks.append(task8)
+    goal2.tasks.append(task9)
+    goal2.tasks.append(task10)
 
-    # Work category
-    category3.tasks.append(task3)
-    category3.tasks.append(task7)
-    category3.tasks.append(task11)
+    # Complete project goal
+    goal3.tasks.append(task3)
+    goal3.tasks.append(task7)
+    goal3.tasks.append(task11)
 
-    # Health category
-    category4.tasks.append(task5)
+    # Lose 10lbs goal
+    goal4.tasks.append(task5)
 
     db.session.commit()
